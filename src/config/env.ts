@@ -24,4 +24,7 @@ const config: Config = {
   DB_NAME: process.env.DB_NAME || "grazle",
 };
 
+console.log(config); // Add this line to verify configuration
+
+
 export default config;
