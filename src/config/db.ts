@@ -29,6 +29,16 @@ export const appDataSource = new DataSource({
   logging: true,
 });
 
+
+console.log("Database Connection Details:", {
+  host: process.env.DB_HOST,
+  port: parseInt(process.env.DB_PORT || "3306"),
+  username: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+});
+
+
 appDataSource
   .initialize()
   .then(() => {
