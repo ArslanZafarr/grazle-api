@@ -18,25 +18,17 @@ const dbSyncStatus = process.env.NODE_ENV === "development" ? true : false;
 
 export const appDataSource = new DataSource({
   type: "mysql",
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT || "3306"),
-  username: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  entities: entitiesPath,
-  migrations: migrationsPath,
-  synchronize: dbSyncStatus,
+  host: 'localhost', // or your MySQL server host
+  port: 3306, // MySQL port, default is 3306
+  username: 'grazleuser', // your MySQL username
+  password: 'AnotherStr0ngP@ssw0rd!', // your MySQL password
+  database: 'grazle', // your MySQL database name
+  synchronize: false, // set to false in production
   logging: true,
 });
 
 
-console.log("Database Connection Details:", {
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT || "3306"),
-  username: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-});
+console.log("Database Connection Details:", appDataSource);
 
 
 appDataSource
