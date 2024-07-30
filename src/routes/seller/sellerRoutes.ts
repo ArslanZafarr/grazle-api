@@ -10,6 +10,7 @@ import { StoreProfileController } from "../../controllers/seller/StoreProfileCon
 import path from "path";
 import fs from "fs";
 import { UserMembershipController } from "../../controllers/seller/MembershipPurchaseController";
+import { authMiddleware } from "../../middleware/authMiddleware";
 
 const router = express.Router();
 const multer = require("multer");
@@ -269,18 +270,18 @@ const userMembershipPlanController = new UserMembershipController();
 
 router.get(
   "/membership-plans",
-  sellerMiddleware,
+  authMiddleware,
   userMembershipPlanController.getAll
 );
 router.get(
   "/membership-plans/:id",
-  sellerMiddleware,
+  authMiddleware,
   userMembershipPlanController.getById
 );
 
 router.post(
   "/purchase-membership-plan",
-  sellerMiddleware,
+  authMiddleware,
   parsing,
   [
     body("membership_plan_id")
@@ -292,7 +293,7 @@ router.post(
 );
 router.post(
   "/confirm-plan-payment/:id",
-  sellerMiddleware,
+  authMiddleware,
   parsing,
   [
     body("transaction_id")
@@ -307,20 +308,20 @@ router.post(
 
 router.get(
   "/user-membership-plan",
-  sellerMiddleware,
+  authMiddleware,
   userMembershipPlanController.getUserMemberships
 );
 
 router.get(
   "/active-membership-plan",
-  sellerMiddleware,
+  authMiddleware,
   userMembershipPlanController.getActiveMembershipByUserId
 );
 
 // Apply Membership Plan
 router.post(
   "/apply-membership-discount",
-  sellerMiddleware,
+  authMiddleware,
   parsing,
   [
     body("product_ids")
