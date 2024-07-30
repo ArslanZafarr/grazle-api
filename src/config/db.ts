@@ -22,7 +22,9 @@ export const appDataSource = new DataSource({
   port: 3306, // MySQL port, default is 3306
   username: 'grazleuser', // your MySQL username
   password: 'AnotherStr0ngP@ssw0rd!', // your MySQL password
+  
   database: 'grazle', // your MySQL database name
+  entities : entitiesPathBuild,
   synchronize: false, // set to false in production
   logging: true,
 });
