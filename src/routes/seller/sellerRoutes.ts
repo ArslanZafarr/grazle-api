@@ -121,7 +121,7 @@ router.get(
   productController.getProductBySlug
 );
 router.put(
-  "/:id",
+  "/vendor/products/:id",
   sellerMiddleware,
   uploader.fields([
     { name: "featured_image", maxCount: 1 },
