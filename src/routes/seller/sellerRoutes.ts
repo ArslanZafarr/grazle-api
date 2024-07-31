@@ -1,5 +1,5 @@
 import express from "express";
-import { body, check } from "express-validator";
+import { body } from "express-validator";
 import { ProductController } from "../../controllers/seller/ProductController";
 import { sellerMiddleware } from "../../middleware/sellerMiddleware";
 import { SellerOrderController } from "../../controllers/seller/OrderController";
@@ -23,20 +23,38 @@ if (!fs.existsSync(storeImageDir)) {
   console.log("Store image directory created");
 }
 
-const storeImageUploader = multer({
-  fileFilter: function (req: any, file: any, cb: any) {
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(
-        new Error(
-          "Invalid file type. Only JPEG, PNG, and PDF files are allowed."
-        ),
-        false
-      );
-    }
+// Set up storage configuration
+const storage = multer.diskStorage({
+  destination: function (req: any, file: any, cb: any) {
+    // Set the destination directory for file uploads
+    cb(null, "bucket/store"); // Change 'uploads/' to your desired upload directory
   },
+  filename: function (req: any, file: any, cb: any) {
+    // Set the filename for uploaded files
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + "-" + file.originalname);
+  },
+});
+
+// Set up file filter
+const fileFilter = (req: any, file: any, cb: any) => {
+  const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(
+      new Error(
+        "Invalid file type. Only JPEG, PNG, and PDF files are allowed."
+      ),
+      false
+    );
+  }
+};
+
+// Set up multer with storage and file filter
+const storeImageUploader = multer({
+  storage: storage,
+  fileFilter: fileFilter,
 }).fields([
   { name: "store_image", maxCount: 1 },
   { name: "business_license", maxCount: 1 },
