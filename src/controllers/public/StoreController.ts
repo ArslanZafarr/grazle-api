@@ -7,7 +7,7 @@ import { User } from "../../entities/Users";
 
 const BASE_URL =
   process.env.IMAGE_PATH ||
-  "https://api.grazle.co.in/api/";
+  "https://api.grazle.co.in/";
 
 
 export class StoreController {

@@ -11,7 +11,7 @@ import { Profile } from "../../entities/Profiles";
 import { Review } from "../../entities/Review";
 import { Offer } from "../../entities/Offer";
 
-Profile;
+
 export class SuggestedProductsController {
   async logProductInteraction(req: Request, res: Response) {
     try {

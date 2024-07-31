@@ -17,7 +17,7 @@ import { v4 as uuidv4 } from "uuid";
 
 const BASE_URL =
   process.env.IMAGE_PATH ||
-  "https://api.grazle.co.in/api/";
+  "https://api.grazle.co.in/";
 
 interface ProductWithoutTimestamps {
   id: number;

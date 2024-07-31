@@ -5,7 +5,7 @@ import { Banner } from "../../entities/Banners";
 
 const BASE_URL =
   process.env.IMAGE_PATH ||
-  "https://api.grazle.co.in/api/";
+  "https://api.grazle.co.in/";
 
 function getFullUrl(path: string | null): string | null {
   if (!path) {

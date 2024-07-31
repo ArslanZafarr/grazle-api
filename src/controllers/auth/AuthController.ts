@@ -13,7 +13,7 @@ import { StoreProfile } from "../../entities/StoreProfile";
 import { NotificationSettings } from "../../entities/NotificationSettings";
 const ms = require("ms");
 
-const BASE_URL = process.env.IMAGE_PATH || "https://api.grazle.co.in/api/";
+const BASE_URL = process.env.IMAGE_PATH || "https://api.grazle.co.in/";
 
 export class AuthController {
   async register(req: Request, res: Response) {

@@ -12,7 +12,7 @@ import { Offer } from "../../entities/Offer";
 
 const BASE_URL =
   process.env.IMAGE_PATH ||
-  "https://api.grazle.co.in/api/";
+  "https://api.grazle.co.in/";
 
 export class FavoriteProductController {
   async toggleProductFavorite(req: Request, res: Response) {
