@@ -21,7 +21,7 @@ const omitTimestamps = (order: Order) => {
 
 const BASE_URL =
   process.env.IMAGE_PATH ||
-  "https://api.grazle.co.in/api/";
+  "https://api.grazle.co.in/";
 
 const omitSensitiveUserInfo = (order: any) => {
   // Create a shallow copy of the order object
