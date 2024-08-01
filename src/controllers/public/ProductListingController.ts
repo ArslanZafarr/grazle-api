@@ -1132,6 +1132,115 @@ export class ProductListingController {
     }
   }
 
+  async getProductsByOfferId(req: Request, res: Response) {
+    try {
+      const { offer_id } = req.params;
+      const { page = 1, limit = 10 } = req.query;
+
+      const productRepository = appDataSource.getRepository(Product);
+      const reviewRepository = appDataSource.getRepository(Review);
+      const categoryRepository = appDataSource.getRepository(Category);
+      const brandRepository = appDataSource.getRepository(Brand);
+
+      // Fetch products with the given offer ID
+      const products = await productRepository
+        .createQueryBuilder("product")
+        .leftJoinAndSelect("product.offer", "offer")
+        .leftJoinAndSelect("product.gallery", "gallery") // Include the gallery relation
+        .where("product.offer_id = :offerId", {
+          offerId: parseInt(offer_id, 10),
+        })
+        .andWhere("offer.active = :active", { active: true })
+        .orderBy("product.created_at", "DESC")
+        .skip((Number(page) - 1) * Number(limit))
+        .take(Number(limit))
+        .getMany();
+
+      if (!products || products.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "No products available for this offer.",
+        });
+      }
+
+      // Fetch reviews for all products in one go to optimize performance
+      const productIds = products.map((product) => product.id);
+      const reviews = await reviewRepository.find({
+        where: { product_id: In(productIds) },
+        order: { created_at: "DESC" },
+      });
+
+      // Calculate average ratings and attach reviews to respective products
+      const productWithReviews = products.map((product) => {
+        const productReviews = reviews.filter(
+          (review) => review.product_id === product.id
+        );
+        const totalReviews = productReviews.length;
+        const averageRating =
+          totalReviews > 0
+            ? productReviews.reduce((sum, review) => sum + review.rating, 0) /
+              totalReviews
+            : 0;
+
+        // Attach base URL to featured_image and gallery images
+        return {
+          ...product,
+          featured_image: `${BASE_URL}${product.featured_image}`,
+          gallery: product.gallery.map((image) => ({
+            ...image,
+            image_url: `${BASE_URL}${image.image}`,
+          })),
+          rating: averageRating.toFixed(1),
+          reviews: totalReviews,
+        };
+      });
+
+      // Fetch categories and brands for all products
+      const categoryIds = productWithReviews.map(
+        (product) => product.category_id
+      );
+      const brandIds = productWithReviews.map((product) => product.brand_id);
+
+      const categories = await categoryRepository.find({
+        where: { id: In(categoryIds) },
+      });
+      const brands = await brandRepository.find({
+        where: { id: In(brandIds) },
+      });
+
+      // Map categories and brands to respective products
+      const productsWithDetails = productWithReviews.map((product) => {
+        const category = categories.find(
+          (cat) => cat.id === product.category_id
+        );
+        const brand = brands.find((brand) => brand.id === product.brand_id);
+
+        return {
+          ...product,
+          category: category || null,
+          brand: brand || null,
+        };
+      });
+
+      res.status(200).json({
+        success: true,
+        products: productsWithDetails,
+        total: products.length,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(products.length / Number(limit)),
+        message: "Products for the given offer retrieved successfully",
+      });
+    } catch (error: any) {
+      console.error("Error fetching products for offer:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to retrieve products for the given offer",
+        error: error.message,
+      });
+    }
+  }
+
   // Get All Products with 50% Offer Conditions
   async getProductsWithFiftyPercentOffer(req: Request, res: Response) {
     try {
