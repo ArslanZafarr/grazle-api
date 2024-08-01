@@ -15,9 +15,7 @@ import { Review } from "../../entities/Review";
 import { User } from "../../entities/Users";
 import { v4 as uuidv4 } from "uuid";
 
-const BASE_URL =
-  process.env.IMAGE_PATH ||
-  "https://api.grazle.co.in/";
+const BASE_URL = process.env.IMAGE_PATH || "https://api.grazle.co.in/";
 
 interface ProductWithoutTimestamps {
   id: number;
@@ -175,7 +173,6 @@ export class ProductController {
       const faqsRepository = appDataSource.getRepository(ProductFaqs);
       const variantRepository = appDataSource.getRepository(ProductVariant);
 
-
       let slug = slugify(title, { lower: true });
 
       const existingProduct = await productRepository.findOne({
@@ -186,7 +183,6 @@ export class ProductController {
         // Append a unique 6-character string to the slug to avoid duplication
         slug = `${slug}-${uuidv4().slice(0, 6)}`;
       }
-
 
       const product = new Product();
       product.user_id = getUserId;
@@ -256,11 +252,16 @@ export class ProductController {
       });
 
       if (savedProduct) {
-        res.status(201).json({
-          product: savedProduct,
-          success: true,
-          message: "Product created successfully!",
-        });
+        // Concatenate BASE_URL with featured_image and gallery images
+        savedProduct.featured_image = savedProduct.featured_image
+          ? `${BASE_URL}/${savedProduct.featured_image}`
+          : savedProduct.featured_image;
+        if (savedProduct.gallery) {
+          savedProduct.gallery = savedProduct.gallery.map((g) => ({
+            ...g,
+            image: `${BASE_URL}/${g.image}`,
+          }));
+        }
       } else {
         res.status(500).json({
           success: false,
@@ -384,7 +385,7 @@ export class ProductController {
   async updateProduct(req: Request, res: Response) {
     try {
       const { id } = req.params;
-  
+
       const {
         category_id,
         brand_id,
@@ -399,24 +400,24 @@ export class ProductController {
         answers,
         variants,
       } = req.body;
-  
+
       const productRepository = appDataSource.getRepository(Product);
       const galleryRepository = appDataSource.getRepository(ProductsGallery);
       const faqsRepository = appDataSource.getRepository(ProductFaqs);
       const variantRepository = appDataSource.getRepository(ProductVariant);
-  
+
       const product = await productRepository.findOne({
         where: { id: parseInt(id) },
         relations: ["gallery", "faqs", "variants"],
       });
-  
+
       if (!product) {
         return res.status(404).json({
           success: false,
           message: "Product not found",
         });
       }
-  
+
       product.category_id = category_id || product.category_id;
       product.brand_id = brand_id || product.brand_id;
       product.title = title || product.title;
@@ -425,7 +426,7 @@ export class ProductController {
       product.tags = tags || product.tags;
       product.color = color || product.color;
       product.product_info = product_info || product.product_info;
-  
+
       if (discount && !isNaN(parseFloat(discount))) {
         product.discount = parseFloat(discount);
         const discountAmount = parseFloat(discount) / 100;
@@ -434,53 +435,63 @@ export class ProductController {
         product.discount = null;
         product.discounted_price = product.price;
       }
-  
-      const featured_image = (req as any).files?.featured_image?.[0]?.path.replace(/\\/g, "/");
+
+      const featured_image = (
+        req as any
+      ).files?.featured_image?.[0]?.path.replace(/\\/g, "/");
       const gallery_images =
         (req as any).files?.gallery_images?.map((file: any) =>
           file.path.replace(/\\/g, "/")
         ) || [];
-  
+
       if (featured_image) {
         if (product.featured_image) {
-          const oldImagePath = path.join(__dirname, "../../..", product.featured_image);
+          const oldImagePath = path.join(
+            __dirname,
+            "../../..",
+            product.featured_image
+          );
           fs.unlink(oldImagePath, (err) => {
             if (err) console.error("Failed to delete old image:", err);
           });
         }
         product.featured_image = featured_image;
       }
-  
+
       await productRepository.save(product);
-  
+
       if (gallery_images.length > 0) {
         const existingGallery = product.gallery || [];
-  
+
         for (const galleryItem of existingGallery) {
-          const oldGalleryPath = path.join(__dirname, "../../..", galleryItem.image);
+          const oldGalleryPath = path.join(
+            __dirname,
+            "../../..",
+            galleryItem.image
+          );
           fs.unlink(oldGalleryPath, (err) => {
             if (err) console.error("Failed to delete old gallery image:", err);
           });
-  
+
           await galleryRepository.remove(galleryItem);
         }
-  
+
         const newGalleryEntries = gallery_images.map((image: string) => {
           const galleryEntry = new ProductsGallery();
           galleryEntry.product_id = product.id;
           galleryEntry.image = image;
           return galleryEntry;
         });
-  
+
         await galleryRepository.save(newGalleryEntries);
       }
-  
+
       // Updating FAQs
       if (questions && answers && questions.length === answers.length) {
         const existingFaqs = product.faqs || [];
-  
+
         await faqsRepository.remove(existingFaqs);
-  
+
         const faqEntries = questions.map((question: string, index: number) => {
           const faqEntry = new ProductFaqs();
           faqEntry.product = product;
@@ -488,16 +499,16 @@ export class ProductController {
           faqEntry.answer = answers[index];
           return faqEntry;
         });
-  
+
         await faqsRepository.save(faqEntries);
       }
-  
+
       // Updating Variants
       if (variants && Array.isArray(variants) && variants.length > 0) {
         const existingVariants = product.variants || [];
-  
+
         await variantRepository.remove(existingVariants);
-  
+
         const variantEntries = variants.map((variant: any) => {
           const productVariant = new ProductVariant();
           productVariant.variant = variant.variant;
@@ -507,15 +518,15 @@ export class ProductController {
           productVariant.product = product;
           return productVariant;
         });
-  
+
         await variantRepository.save(variantEntries);
       }
-  
+
       const updatedProduct = await productRepository.findOne({
         where: { id: product.id },
         relations: ["gallery", "faqs", "variants"],
       });
-  
+
       if (updatedProduct) {
         res.status(200).json({
           product: updatedProduct,
@@ -536,7 +547,6 @@ export class ProductController {
       });
     }
   }
-  
 
   // Delete Product
   async deleteProduct(req: Request, res: Response) {
