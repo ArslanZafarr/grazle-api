@@ -32,6 +32,14 @@ router.get(
   productListingController.getProductsByUserIdWithOffer
 );
 router.get(
+  "/product-offers/fifty-percent-discount",
+  productListingController.getProductsWithFiftyPercentOffer
+);
+router.get(
+  "/product-offers/seventy-percent-discount",
+  productListingController.getProductsWithSeventyPercentOffer
+);
+router.get(
   "/discounted-products",
   productListingController.getAllProductsWithDiscounts
 );
@@ -115,6 +123,5 @@ router.get("/cities-by-state/:id", statesCitiesController.findCitiesByState);
 router.get("/cities", statesCitiesController.findAllCities);
 router.get("/states/:id", statesCitiesController.findOneState);
 router.get("/cities/:id", statesCitiesController.findOneCity);
-
 
 export default router;

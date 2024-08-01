@@ -75,9 +75,7 @@ interface ProductWithExtras extends Omit<Product, "reviews"> {
   gallery: Array<ProductsGallery & { image_url: string }>;
 }
 
-const BASE_URL =
-  process.env.IMAGE_PATH ||
-  "https://api.grazle.co.in/";
+const BASE_URL = process.env.IMAGE_PATH || "https://api.grazle.co.in/";
 
 const omitProductTtimestamps = async (
   product: Product
@@ -1129,6 +1127,216 @@ export class ProductListingController {
       res.status(500).json({
         success: false,
         message: "Failed to retrieve products with active offers",
+        error: error.message,
+      });
+    }
+  }
+
+  // Get All Products with 50% Offer Conditions
+  async getProductsWithFiftyPercentOffer(req: Request, res: Response) {
+    try {
+      const { category_id, brand_id, page = 1, limit = 10 } = req.query;
+      const productRepository = appDataSource.getRepository(Product);
+      const reviewRepository = appDataSource.getRepository(Review);
+
+      const queryBuilder = productRepository
+        .createQueryBuilder("product")
+        .leftJoinAndSelect("product.gallery", "gallery")
+        .leftJoinAndSelect("product.offer", "offer")
+        .orderBy("product.created_at", "DESC");
+
+      if (category_id) {
+        queryBuilder.andWhere("product.category_id = :category_id", {
+          category_id: Number(category_id),
+        });
+      }
+
+      if (brand_id) {
+        queryBuilder.andWhere("product.brand_id = :brand_id", {
+          brand_id: Number(brand_id),
+        });
+      }
+
+      // Filter products where offer is not null, offer.active is true,
+      // offer.discount_type is "percentage", and offer.discount_value is 50
+      queryBuilder.andWhere("offer.id IS NOT NULL");
+      queryBuilder.andWhere("offer.active = :active", { active: true });
+      queryBuilder.andWhere("offer.discount_type = :discount_type", {
+        discount_type: "percentage",
+      });
+      queryBuilder.andWhere("offer.discount_value = :discount_value", {
+        discount_value: 50,
+      });
+
+      const pagination = await paginate<Product>(queryBuilder, {
+        page: Number(page),
+        limit: Number(limit),
+      });
+
+      // Fetch reviews for each product
+      const productsWithReviews: ProductWithExtras[] = await Promise.all(
+        pagination.items.map(async (product) => {
+          const reviews = await reviewRepository.find({
+            where: { product_id: product.id },
+            order: { created_at: "DESC" },
+          });
+
+          const totalReviews = reviews.length;
+          const averageRating =
+            totalReviews > 0
+              ? reviews.reduce((sum, review) => sum + review.rating, 0) /
+                totalReviews
+              : 0;
+
+          // Attach reviews, average rating, total reviews, and updated URLs to the product
+          return {
+            ...product,
+            featured_image: product.featured_image
+              ? `${BASE_URL}${product.featured_image}`
+              : product.featured_image,
+            gallery: product.gallery.map((image) => ({
+              ...image,
+              image_url: `${BASE_URL}${image.image}`,
+            })),
+            rating: averageRating.toFixed(1),
+            reviewCount: totalReviews,
+          };
+        })
+      );
+
+      // Group products by offer
+      const offersWithProducts = productsWithReviews.reduce((acc, product) => {
+        const offer = product.offer;
+        if (offer) {
+          if (!acc[offer.id]) {
+            acc[offer.id] = {
+              offer,
+              offer_products: [] as ProductWithExtras[],
+            };
+          }
+          acc[offer.id].offer_products.push(product);
+        }
+        return acc;
+      }, {} as Record<number, { offer: Offer; offer_products: ProductWithExtras[] }>);
+
+      res.status(200).json({
+        offers: Object.values(offersWithProducts),
+        total: pagination.meta.totalItems,
+        page: pagination.meta.currentPage,
+        limit: pagination.meta.itemsPerPage,
+        totalPages: pagination.meta.totalPages,
+        success: true,
+        message: "Products with specific offer retrieved successfully!",
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to retrieve products",
+        error: error.message,
+      });
+    }
+  }
+
+  // Get All Products with 70% Offer Conditions
+  async getProductsWithSeventyPercentOffer(req: Request, res: Response) {
+    try {
+      const { category_id, brand_id, page = 1, limit = 10 } = req.query;
+      const productRepository = appDataSource.getRepository(Product);
+      const reviewRepository = appDataSource.getRepository(Review);
+
+      const queryBuilder = productRepository
+        .createQueryBuilder("product")
+        .leftJoinAndSelect("product.gallery", "gallery")
+        .leftJoinAndSelect("product.offer", "offer")
+        .orderBy("product.created_at", "DESC");
+
+      if (category_id) {
+        queryBuilder.andWhere("product.category_id = :category_id", {
+          category_id: Number(category_id),
+        });
+      }
+
+      if (brand_id) {
+        queryBuilder.andWhere("product.brand_id = :brand_id", {
+          brand_id: Number(brand_id),
+        });
+      }
+
+      // Filter products where offer is not null, offer.active is true,
+      // offer.discount_type is "percentage", and offer.discount_value is 50
+      queryBuilder.andWhere("offer.id IS NOT NULL");
+      queryBuilder.andWhere("offer.active = :active", { active: true });
+      queryBuilder.andWhere("offer.discount_type = :discount_type", {
+        discount_type: "percentage",
+      });
+      queryBuilder.andWhere("offer.discount_value = :discount_value", {
+        discount_value: 70,
+      });
+
+      const pagination = await paginate<Product>(queryBuilder, {
+        page: Number(page),
+        limit: Number(limit),
+      });
+
+      // Fetch reviews for each product
+      const productsWithReviews: ProductWithExtras[] = await Promise.all(
+        pagination.items.map(async (product) => {
+          const reviews = await reviewRepository.find({
+            where: { product_id: product.id },
+            order: { created_at: "DESC" },
+          });
+
+          const totalReviews = reviews.length;
+          const averageRating =
+            totalReviews > 0
+              ? reviews.reduce((sum, review) => sum + review.rating, 0) /
+                totalReviews
+              : 0;
+
+          // Attach reviews, average rating, total reviews, and updated URLs to the product
+          return {
+            ...product,
+            featured_image: product.featured_image
+              ? `${BASE_URL}${product.featured_image}`
+              : product.featured_image,
+            gallery: product.gallery.map((image) => ({
+              ...image,
+              image_url: `${BASE_URL}${image.image}`,
+            })),
+            rating: averageRating.toFixed(1),
+            reviewCount: totalReviews,
+          };
+        })
+      );
+
+      // Group products by offer
+      const offersWithProducts = productsWithReviews.reduce((acc, product) => {
+        const offer = product.offer;
+        if (offer) {
+          if (!acc[offer.id]) {
+            acc[offer.id] = {
+              offer,
+              offer_products: [] as ProductWithExtras[],
+            };
+          }
+          acc[offer.id].offer_products.push(product);
+        }
+        return acc;
+      }, {} as Record<number, { offer: Offer; offer_products: ProductWithExtras[] }>);
+
+      res.status(200).json({
+        offers: Object.values(offersWithProducts),
+        total: pagination.meta.totalItems,
+        page: pagination.meta.currentPage,
+        limit: pagination.meta.itemsPerPage,
+        totalPages: pagination.meta.totalPages,
+        success: true,
+        message: "Products with specific offer retrieved successfully!",
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to retrieve products",
         error: error.message,
       });
     }
