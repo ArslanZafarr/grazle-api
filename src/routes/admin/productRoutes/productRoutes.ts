@@ -34,7 +34,6 @@ router.post(
     body("category_id")
       .notEmpty()
       .withMessage("The category id field is required"),
-    body("brand_id").notEmpty().withMessage("The brand id field is required"),
     body("title").notEmpty().withMessage("The title field is required"),
     body("price").notEmpty().withMessage("The price field is required"),
   ],
