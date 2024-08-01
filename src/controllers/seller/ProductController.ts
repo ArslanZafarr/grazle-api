@@ -326,6 +326,13 @@ export class ProductController {
           // Attach reviews, average rating, and total reviews to the product
           return {
             ...product,
+            featured_image: product?.featured_image
+              ? `${BASE_URL}${product?.featured_image}`
+              : null,
+            gallery: product.gallery.map((image) => ({
+              ...image,
+              image: `${BASE_URL}${image.image}`,
+            })),
             rating: averageRating.toFixed(1),
             reviews: totalReviews,
           };
@@ -367,11 +374,19 @@ export class ProductController {
           .json({ success: false, message: "Product not found" });
       }
 
-      res.status(200).json({
-        product: await omitProductTimestamps(product),
-        success: true,
-        message: "Product retrieved successfully!",
-      });
+      // Concatenate BASE_URL with featured_image and gallery images
+      product.featured_image = product.featured_image
+        ? `${BASE_URL}/${product.featured_image}`
+        : product.featured_image;
+
+      if (product.gallery && Array.isArray(product.gallery)) {
+        product.gallery = product.gallery.map((g) => ({
+          ...g,
+          image: `${BASE_URL}/${g.image}`,
+        }));
+      }
+
+      return res.status(200).json({ success: true, product });
     } catch (error: any) {
       res.status(500).json({
         success: false,
@@ -380,7 +395,6 @@ export class ProductController {
       });
     }
   }
-
   // Update Product
   async updateProduct(req: Request, res: Response) {
     try {
