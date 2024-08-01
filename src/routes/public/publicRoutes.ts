@@ -39,6 +39,12 @@ router.get(
   "/product-offers/seventy-percent-discount",
   productListingController.getProductsWithSeventyPercentOffer
 );
+
+router.get(
+  "/products-by-offer/:offer_id",
+  productListingController.getProductsByOfferId
+);
+
 router.get(
   "/discounted-products",
   productListingController.getAllProductsWithDiscounts
