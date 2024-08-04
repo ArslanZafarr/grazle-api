@@ -32,11 +32,11 @@ router.get(
   productListingController.getProductsByUserIdWithOffer
 );
 router.get(
-  "/product-offers/fifty-percent-discount",
+  "/product-by-percentage-offers/fifty",
   productListingController.getProductsWithFiftyPercentOffer
 );
 router.get(
-  "/product-offers/seventy-percent-discount",
+  "/product-by-percentage-offers/seventy",
   productListingController.getProductsWithSeventyPercentOffer
 );
 

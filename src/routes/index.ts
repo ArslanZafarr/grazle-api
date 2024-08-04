@@ -7,6 +7,8 @@ import commonRoutes from "./common/commonRoutes";
 import publicRoutes from "./public/publicRoutes";
 import productRoutes from "./admin/productRoutes/productRoutes";
 import paymentRoutes from "./payment/paymentRoute";
+import phonePeRoutes from "./payment/phonePeRoutes";
+
 import profileRoutes from "./profileRoutes";
 import referralRoute from "./referral/referralRoute";
 import { parsing } from "../config/parseMulter";
@@ -25,6 +27,9 @@ router.use("/", productRoutes);
 
 // For Payment Gateway
 router.use("/payment", paymentRoutes);
+router.use("/phonepe", phonePeRoutes);
+
+
 // For Referral Ranking
 router.use("/", referralRoute);
 

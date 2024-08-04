@@ -262,8 +262,14 @@ export class ProductController {
             image: `${BASE_URL}/${g.image}`,
           }));
         }
+
+        return res.status(201).json({
+          success: true,
+          message: "Product created successfully",
+          data: savedProduct,
+        });
       } else {
-        res.status(500).json({
+        return res.status(500).json({
           success: false,
           message: "Failed to fetch saved product details",
         });

@@ -70,8 +70,8 @@ interface ProfileWithoutTtimestamps {
 
 interface ProductWithExtras extends Omit<Product, "reviews"> {
   featured_image: string;
-  rating: string;
-  reviewCount: number;
+  // rating: string;
+  // reviewCount: number;
   gallery: Array<ProductsGallery & { image_url: string }>;
 }
 
@@ -1346,7 +1346,6 @@ export class ProductListingController {
     }
   }
 
-  // Get All Products with 70% Offer Conditions
   async getProductsWithSeventyPercentOffer(req: Request, res: Response) {
     try {
       const { category_id, brand_id, page = 1, limit = 10 } = req.query;
