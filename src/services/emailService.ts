@@ -6,7 +6,7 @@ dotenv.config();
 
 const transporter = nodemailer.createTransport({
   host: "smtp.hostinger.com",
-  port: 587,
+  port: 465,
   auth: {
     user: "info@grazle.co.in",
     pass: "Hemant@12#%$#^5q26",
