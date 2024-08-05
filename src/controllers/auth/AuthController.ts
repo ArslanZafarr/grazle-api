@@ -537,15 +537,15 @@ export class AuthController {
       });
 
       const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT as string, 10),
+        host: "smtp.hostinger.com",
+        port: 587,
         auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
+          user: "info@grazle.co.in",
+          pass: "Hemant@12#%$#^5q26",
         },
       });
 
-      const resetUrl = `http://yourapp.com/reset-password?token=${resetToken}`;
+      const resetUrl = `https://grazle.co.in/reset-password?token=${resetToken}`;
 
       const mailOptions = {
         from: '"Grazle" <no-reply@yourapp.com>',
