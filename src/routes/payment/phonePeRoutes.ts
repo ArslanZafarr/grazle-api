@@ -2,8 +2,9 @@ import { Router } from "express";
 import {
   initiatePayment,
   handleCallback,
+  checkTransactionStatus,
 } from "../../controllers/payment/PhonePeController";
-import { body } from "express-validator";
+import { body, param } from "express-validator";
 
 const router = Router();
 
@@ -24,5 +25,14 @@ router.post(
 
 // Route to handle the callback from PhonePe
 router.post("/callback", handleCallback);
+router.get(
+  "/check-transaction-status/:merchantTransactionId",
+  [
+    param("merchantTransactionId")
+      .notEmpty()
+      .withMessage("The merchantTransactionId parameter is required"),
+  ],
+  checkTransactionStatus
+);
 
 export default router;

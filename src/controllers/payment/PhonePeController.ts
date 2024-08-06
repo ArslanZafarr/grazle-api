@@ -4,8 +4,10 @@ import axios from "axios";
 import { validationResult } from "express-validator";
 import { v4 as uuidv4 } from "uuid";
 
-// Replace with your actual salt key
+// phonePe config
+const MERCHANT_ID = "M1NBUBRXXYI7";
 const SALT_KEY = "daa576cb-3628-49d3-b7a6-fe03e4226919";
+const SALT_INDEX = "1";
 const callbackUrl = "https://api.grazle.co.in/api/phonepe/callback";
 
 // Function to generate the X-Verify header
@@ -100,6 +102,9 @@ export async function initiatePayment(req: Request, res: Response) {
     console.log("Base64 Encoded Payload:", base64Payload);
     console.log("X-VERIFY Header:", xVerify);
 
+    const test = "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay";
+    const production = "https://api.phonepe.com/apis/hermes/pg/v1/pay";
+
     const response = await axios.post(
       "https://api.phonepe.com/apis/hermes/pg/v1/pay",
       { request: base64Payload },
@@ -167,4 +172,58 @@ function validateXVerify(payload: string, xVerifyHeader: string): boolean {
   hash.update(payload + endpoint + SALT_KEY);
   const checksum = hash.digest("hex");
   return `${checksum}###${saltIndex}` === xVerifyHeader;
+}
+
+// Function to generate the X-Verify header
+function generatedXVerify(endpoint: string): string {
+  const hash = crypto.createHash("sha256");
+  hash.update(endpoint + SALT_KEY);
+  const checksum = hash.digest("hex");
+  return `${checksum}###${SALT_INDEX}`;
+}
+
+// New endpoint to check transaction status
+export async function checkTransactionStatus(req: Request, res: Response) {
+  try {
+    // Validation Error Handling
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { merchantTransactionId } = req.params;
+
+    const endpoint = `/pg/v1/status/${MERCHANT_ID}/${merchantTransactionId}`;
+    const xVerify = generatedXVerify(endpoint);
+
+    console.log("X-VERIFY Header:", xVerify);
+
+    const response = await axios.get(
+      `https://api.phonepe.com/apis/hermes${endpoint}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "X-VERIFY": xVerify,
+          "X-MERCHANT-ID": MERCHANT_ID,
+        },
+      }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error("Axios Error:", error.response?.data);
+      res.status(500).json({
+        error:
+          error.response?.data ||
+          "An error occurred while checking the transaction status.",
+      });
+    } else {
+      console.error("Unexpected Error:", error);
+      res.status(500).json({
+        error:
+          "An unexpected error occurred while checking the transaction status.",
+      });
+    }
+  }
 }
