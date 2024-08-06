@@ -545,7 +545,7 @@ export class AuthController {
         },
       });
 
-      const resetUrl = `https://grazle.co.in/reset-password?token=${resetToken}`;
+      const resetUrl = `https://grazle.co.in/ResetPassword?token=${resetToken}`;
 
       const mailOptions = {
         from: '"Grazle" <no-reply@yourapp.com>',

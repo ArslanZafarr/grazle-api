@@ -6,8 +6,9 @@ import sellerRoutes from "./seller/sellerRoutes";
 import commonRoutes from "./common/commonRoutes";
 import publicRoutes from "./public/publicRoutes";
 import productRoutes from "./admin/productRoutes/productRoutes";
-import paymentRoutes from "./payment/paymentRoute";
+// import paymentRoutes from "./payment/paymentRoute";
 import phonePeRoutes from "./payment/phonePeRoutes";
+import ccavenueRoutes from "./payment/ccAvenueRoute";
 
 import profileRoutes from "./profileRoutes";
 import referralRoute from "./referral/referralRoute";
@@ -26,9 +27,9 @@ router.use("/", commonRoutes);
 router.use("/", productRoutes);
 
 // For Payment Gateway
-router.use("/payment", paymentRoutes);
+// router.use("/payment", paymentRoutes);
 router.use("/phonepe", phonePeRoutes);
-
+router.use("/ccavenue", ccavenueRoutes);
 
 // For Referral Ranking
 router.use("/", referralRoute);
