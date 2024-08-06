@@ -123,7 +123,7 @@ export const sendOrderStatusUpdateEmail = async (
   }
 
   const mailOptions = {
-    from: '"Grazle" <grazle@info.com>',
+    from: '"Grazle" <info@grazle.co.in>',
     to: email,
     subject: "Order Status Update",
     text: emailText,
@@ -166,7 +166,7 @@ export const sendOrderCancellationEmailToSeller = async (
     `;
 
   const mailOptions = {
-    from: '"Grazle" <grazle@info.com>',
+    from: '"Grazle" <info@grazle.co.in>',
     to: email,
     subject: "Order Cancellation Notification",
     text: emailText,
@@ -212,7 +212,7 @@ The Grazle Team`;
   `;
 
   const mailOptions = {
-    from: '"Grazle" <grazle@info.com>',
+    from: '"Grazle" <info@grazle.co.in>',
     to: email,
     subject: "Store Profile Status Update",
     text: emailText,

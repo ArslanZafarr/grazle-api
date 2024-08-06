@@ -548,7 +548,7 @@ export class AuthController {
       const resetUrl = `https://grazle.co.in/ResetPassword?token=${resetToken}`;
 
       const mailOptions = {
-        from: '"Grazle" <no-reply@yourapp.com>',
+        from: '"Grazle" <info@grazle.co.in>',
         to: email,
         subject: "Password Reset",
         text: `You requested a password reset. Use the following link to reset your password: ${resetUrl}`,
