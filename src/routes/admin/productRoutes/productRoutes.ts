@@ -80,4 +80,17 @@ router.delete(
   productController.deleteProductImage
 );
 
+
+router.delete(
+  "/admin/products-faq/:productId/faqs/:faqId",
+  adminMiddleware,
+  productController.deleteProductFaq
+);
+
+router.delete(
+  "/admin/products-variant/:productId/variants/:variantId",
+  adminMiddleware,
+  productController.deleteProductVariant
+);
+
 export default router;

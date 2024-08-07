@@ -178,6 +178,14 @@ export class ProductController {
           file.path.replace(/\\/g, "/")
         ) || [];
 
+      // Check if gallery images exceed the limit
+      if (gallery_images.length > 7) {
+        return res.status(400).json({
+          success: false,
+          message: "You can upload a maximum of 7 gallery images.",
+        });
+      }
+
       const productRepository = appDataSource.getRepository(Product);
       const galleryRepository = appDataSource.getRepository(ProductsGallery);
       const faqsRepository = appDataSource.getRepository(ProductFaqs);
@@ -708,6 +716,100 @@ export class ProductController {
       res.status(500).json({
         success: false,
         message: "Failed to delete image from product gallery",
+        error: error.message,
+      });
+    }
+  }
+
+  // Delete Product FAQ
+  async deleteProductFaq(req: Request, res: Response) {
+    try {
+      const { productId, faqId } = req.params;
+      const productRepository = appDataSource.getRepository(Product);
+      const faqsRepository = appDataSource.getRepository(ProductFaqs);
+
+      // Find the product
+      const product = await productRepository.findOne({
+        where: { id: parseInt(productId) },
+        relations: ["faqs"],
+      });
+
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: "Product not found",
+        });
+      }
+
+      // Find the FAQ
+      const faq = product.faqs.find((faq) => faq.id === parseInt(faqId));
+
+      if (!faq) {
+        return res.status(404).json({
+          success: false,
+          message: "FAQ not found in product",
+        });
+      }
+
+      // Remove the FAQ
+      await faqsRepository.remove(faq);
+
+      res.status(200).json({
+        success: true,
+        message: "FAQ deleted successfully from product!",
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to delete FAQ",
+        error: error.message,
+      });
+    }
+  }
+
+  // Delete Product Variant
+  async deleteProductVariant(req: Request, res: Response) {
+    try {
+      const { productId, variantId } = req.params;
+      const productRepository = appDataSource.getRepository(Product);
+      const variantRepository = appDataSource.getRepository(ProductVariant);
+
+      // Find the product
+      const product = await productRepository.findOne({
+        where: { id: parseInt(productId) },
+        relations: ["variants"],
+      });
+
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: "Product not found",
+        });
+      }
+
+      // Find the variant
+      const variant = product.variants.find(
+        (variant) => variant.id === parseInt(variantId)
+      );
+
+      if (!variant) {
+        return res.status(404).json({
+          success: false,
+          message: "Variant not found in product",
+        });
+      }
+
+      // Remove the variant
+      await variantRepository.remove(variant);
+
+      res.status(200).json({
+        success: true,
+        message: "Variant deleted successfully from product!",
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to delete variant",
         error: error.message,
       });
     }
