@@ -92,6 +92,9 @@ const uploader = multer({
       cb(null, file.fieldname + "-" + Date.now() + ".jpg");
     },
   }),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5 MB in bytes
+  },
 });
 
 router.get("/vendor/products", sellerMiddleware, productController.getProducts);
