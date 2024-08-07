@@ -151,6 +151,18 @@ router.delete(
   productController.deleteProductImage
 );
 
+router.delete(
+  "/vendor/products-faq/:productId/faqs/:faqId",
+  sellerMiddleware,
+  productController.deleteProductFaq
+);
+
+router.delete(
+  "/vendor/products-variant/:productId/variants/:variantId",
+  sellerMiddleware,
+  productController.deleteProductVariant
+);
+
 const orderController = new SellerOrderController();
 
 router.get("/seller/orders", sellerMiddleware, orderController.getAllOrders);

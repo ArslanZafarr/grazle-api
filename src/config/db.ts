@@ -61,7 +61,7 @@ appDataSource
 //   database: "grazle",
 //   entities: EntitiesPathDev,
 //   migrations: migrationsPath,
-//   synchronize: dbSyncStatus,
+//   synchronize: true,
 //   logging: true,
 // });
 
