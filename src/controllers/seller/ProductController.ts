@@ -86,6 +86,16 @@ const omitGalleryTimestamps = (
   return { id, image: addBaseUrlToImage(image) };
 };
 
+// Utility function to check if a file exists
+const fileExists = (filePath: string): boolean => {
+  try {
+    return fs.existsSync(filePath);
+  } catch (err) {
+    console.error("Error checking file existence:", err);
+    return false;
+  }
+};
+
 export class ProductController {
   //  Create Product
   async createProduct(req: Request, res: Response) {
@@ -254,12 +264,12 @@ export class ProductController {
       if (savedProduct) {
         // Concatenate BASE_URL with featured_image and gallery images
         savedProduct.featured_image = savedProduct.featured_image
-          ? `${BASE_URL}/${savedProduct.featured_image}`
+          ? `${BASE_URL}${savedProduct.featured_image}`
           : savedProduct.featured_image;
         if (savedProduct.gallery) {
           savedProduct.gallery = savedProduct.gallery.map((g) => ({
             ...g,
-            image: `${BASE_URL}/${g.image}`,
+            image: `${BASE_URL}${g.image}`,
           }));
         }
 
@@ -294,8 +304,8 @@ export class ProductController {
       const queryBuilder = productRepository
         .createQueryBuilder("product")
         .leftJoinAndSelect("product.gallery", "gallery")
-        .where("product.user_id = :userId", { userId: user.id });
-      // .orderBy("product.created_at", "DESC"); // Order by creation date in descending order
+        .where("product.user_id = :userId", { userId: user.id })
+        .orderBy("product.created_at", "DESC");
 
       if (categoryId) {
         queryBuilder.andWhere("product.category_id = :categoryId", {
@@ -382,13 +392,13 @@ export class ProductController {
 
       // Concatenate BASE_URL with featured_image and gallery images
       product.featured_image = product.featured_image
-        ? `${BASE_URL}/${product.featured_image}`
+        ? `${BASE_URL}${product.featured_image}`
         : product.featured_image;
 
       if (product.gallery && Array.isArray(product.gallery)) {
         product.gallery = product.gallery.map((g) => ({
           ...g,
-          image: `${BASE_URL}/${g.image}`,
+          image: `${BASE_URL}${g.image}`,
         }));
       }
 
@@ -405,7 +415,6 @@ export class ProductController {
   async updateProduct(req: Request, res: Response) {
     try {
       const { id } = req.params;
-
       const {
         category_id,
         brand_id,
@@ -478,24 +487,20 @@ export class ProductController {
         product.featured_image = featured_image;
       }
 
+      // Check gallery image limit
+      const existingGalleryCount = product.gallery ? product.gallery.length : 0;
+      const newGalleryCount = gallery_images.length;
+
+      if (existingGalleryCount + newGalleryCount > 7) {
+        return res.status(400).json({
+          success: false,
+          message: `You cannot upload more than 7 gallery images. Current count: ${existingGalleryCount}, New images: ${newGalleryCount}`,
+        });
+      }
+
       await productRepository.save(product);
 
       if (gallery_images.length > 0) {
-        const existingGallery = product.gallery || [];
-
-        for (const galleryItem of existingGallery) {
-          const oldGalleryPath = path.join(
-            __dirname,
-            "../../..",
-            galleryItem.image
-          );
-          fs.unlink(oldGalleryPath, (err) => {
-            if (err) console.error("Failed to delete old gallery image:", err);
-          });
-
-          await galleryRepository.remove(galleryItem);
-        }
-
         const newGalleryEntries = gallery_images.map((image: string) => {
           const galleryEntry = new ProductsGallery();
           galleryEntry.product_id = product.id;
@@ -574,10 +579,13 @@ export class ProductController {
       const { id } = req.params;
       const productRepository = appDataSource.getRepository(Product);
       const galleryRepository = appDataSource.getRepository(ProductsGallery);
+      const faqsRepository = appDataSource.getRepository(ProductFaqs);
+      const variantRepository = appDataSource.getRepository(ProductVariant);
 
+      // Load the product and its related records
       const product = await productRepository.findOne({
         where: { id: parseInt(id) },
-        relations: ["gallery"],
+        relations: ["gallery", "faqs", "variants"],
       });
 
       if (!product) {
@@ -587,32 +595,51 @@ export class ProductController {
         });
       }
 
+      // Delete related files
       if (product.featured_image) {
         const oldImagePath = path.join(
           __dirname,
           "../../..",
           product.featured_image
         );
-        fs.unlink(oldImagePath, (err) => {
-          if (err) console.error("Failed to delete old image:", err);
-        });
+        if (fileExists(oldImagePath)) {
+          fs.unlink(oldImagePath, (err) => {
+            if (err) console.error("Failed to delete old image:", err);
+          });
+        } else {
+          console.warn("Featured image file does not exist:", oldImagePath);
+        }
       }
 
-      const existingGallery = product.gallery || [];
-
-      for (const galleryItem of existingGallery) {
-        const oldGalleryPath = path.join(
-          __dirname,
-          "../../..",
-          galleryItem.image
-        );
-        fs.unlink(oldGalleryPath, (err) => {
-          if (err) console.error("Failed to delete old gallery image:", err);
-        });
-
-        await galleryRepository.remove(galleryItem);
+      if (product.gallery && product.gallery.length > 0) {
+        for (const galleryItem of product.gallery) {
+          const oldGalleryPath = path.join(
+            __dirname,
+            "../../..",
+            galleryItem.image
+          );
+          if (fileExists(oldGalleryPath)) {
+            fs.unlink(oldGalleryPath, (err) => {
+              if (err)
+                console.error("Failed to delete old gallery image:", err);
+            });
+          } else {
+            console.warn("Gallery image file does not exist:", oldGalleryPath);
+          }
+          await galleryRepository.remove(galleryItem);
+        }
       }
 
+      // Remove related records before deleting the product
+      if (product.faqs && product.faqs.length > 0) {
+        await faqsRepository.remove(product.faqs);
+      }
+
+      if (product.variants && product.variants.length > 0) {
+        await variantRepository.remove(product.variants);
+      }
+
+      // Delete the product
       await productRepository.remove(product);
 
       res.status(200).json({
