@@ -118,7 +118,7 @@ router.post(
 
 const bannerController = new BannerController();
 
-router.get("/banners/:position", bannerController.getBannersByPosition);
+router.get("/banners/:position/:type", bannerController.getBannersByPosition);
 
 // States Cities Routes
 

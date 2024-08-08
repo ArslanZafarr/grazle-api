@@ -264,6 +264,16 @@ const bannerUploader = multer({
 const bannerController = new BannerController();
 
 router.get("/admin/banners", adminMiddleware, bannerController.getAllBanners);
+router.get("/admin/banners/:id", adminMiddleware, bannerController.getById);
+router.put(
+  "/admin/banners/:id",
+  adminMiddleware,
+  bannerUploader.fields([
+    { name: "banner_image", maxCount: 1 },
+    { name: "video", maxCount: 1 },
+  ]),
+  bannerController.edit
+);
 router.delete("/admin/banners/:id", adminMiddleware, bannerController.delete);
 router.put(
   "/admin/banners/:id/activate",
@@ -285,6 +295,7 @@ router.post(
   [
     body("title").notEmpty().withMessage("The title field is required"),
     body("position").notEmpty().withMessage("The position field is required"),
+    body("type").notEmpty().withMessage("The type field is required"),
   ],
   bannerController.create
 );
@@ -423,7 +434,6 @@ router.get(
   adminSalesController.getTotalOrdersByDate
 );
 
-
 // Membership plan Routes
 
 const membershipPlanController = new MembershipPlanController();
@@ -468,7 +478,7 @@ router.delete(
   "/admin/membership-plans/:id",
   adminMiddleware,
   membershipPlanController.delete
-)
+);
 const stateController = new StateController();
 
 // Route to create a new state
