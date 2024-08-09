@@ -997,7 +997,7 @@ export class OrderController {
   async updatePaymentStatus(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { payment_status } = req.body;
+      const { payment_status  , transaction_id} = req.body;
 
       const validStatuses = ["paid", "notpaid"];
       if (!validStatuses.includes(payment_status)) {
@@ -1025,6 +1025,7 @@ export class OrderController {
 
       // Update the payment status and timestamp
       order.payment = payment_status;
+      order.transaction_id = transaction_id;
       order.updated_at = new Date();
 
       // Save the updated order
