@@ -13,6 +13,49 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+
+export const sendOrderConfirmationEmail = async (
+  email: string,
+  tracking_id: string
+) => {
+  const emailText = `Dear Customer,
+
+  We are delighted to confirm your order. Your order has been successfully placed, and your tracking ID is ${tracking_id}. You can use this ID to track the status of your order.
+
+  Thank you for shopping with us.
+
+  Best regards,
+  The Grazle Team`;
+
+  const emailHtml = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+      <h2 style="color: #333;">Order Confirmation</h2>
+      <p>Dear Customer,</p>
+      <p>We are delighted to confirm your order.</p>
+      <p>Your order has been successfully placed, and your tracking ID is <strong>${tracking_id}</strong>. You can use this ID to track the status of your order.</p>
+      <p>Thank you for shopping with us.</p>
+      <p>Best regards,</p>
+      <p><strong>The Grazle Team</strong></p>
+    </div>
+  `;
+
+  const mailOptions = {
+    from: '"Grazle" <info@grazle.co.in>',
+    to: email,
+    subject: "Order Confirmation",
+    text: emailText,
+    html: emailHtml,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("Order confirmation email sent successfully");
+  } catch (error) {
+    console.error("Error sending order confirmation email:", error);
+  }
+};
+
+
 export const sendOrderStatusUpdateEmail = async (
   email: string,
   orderId: string,
