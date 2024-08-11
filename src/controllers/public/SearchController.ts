@@ -7,17 +7,16 @@ import { Category } from "../../entities/Category";
 import { Brand } from "../../entities/Brand";
 import { Review } from "../../entities/Review";
 import { Pagination, paginate } from "nestjs-typeorm-paginate";
+import { Like } from "typeorm";
 
-const BASE_URL =
-  process.env.IMAGE_PATH ||
-  "https://api.grazle.co.in/";
-
+const BASE_URL = process.env.IMAGE_PATH || "https://api.grazle.co.in/";
 
 export class SearchController {
   constructor() {
     this.getSearchResults = this.getSearchResults.bind(this);
     this.logSearchKeyword = this.logSearchKeyword.bind(this);
     this.getPopularSearches = this.getPopularSearches.bind(this);
+    this.getSuggestedKeywords = this.getSuggestedKeywords.bind(this);
   }
 
   async getSearchResults(req: Request, res: Response) {
@@ -295,6 +294,97 @@ export class SearchController {
         .status(500)
         .json({ error: "Failed to fetch popular search keywords" });
     }
+  }
+
+  async getSuggestedKeywords(req: Request, res: Response) {
+    try {
+      const { keyword } = req.query;
+
+      if (!keyword || typeof keyword !== "string") {
+        return res.status(400).json({
+          success: false,
+          message: "Keyword is required for suggestions.",
+        });
+      }
+
+      const productRepository = appDataSource.getRepository(Product);
+
+      console.log("Searching for keyword:", keyword);
+
+      const products = await productRepository.find({
+        where: [
+          { title: Like(`%${keyword}%`) },
+          { description: Like(`%${keyword}%`) },
+        ],
+        select: ["title", "description"],
+        take: 10,
+      });
+
+      console.log("Products found:", products);
+
+      if (products.length === 0) {
+        return res.status(200).json({
+          success: true,
+          message: "No products found for the given keyword.",
+          suggestions: [],
+        });
+      }
+
+      const suggestions = products.flatMap((product) => {
+        const titleKeywords = this.extractContextualKeywords(
+          product.title,
+          keyword
+        );
+        const descriptionKeywords = this.extractContextualKeywords(
+          product.description,
+          keyword
+        );
+        return [...titleKeywords, ...descriptionKeywords];
+      });
+
+      const uniqueSuggestions = Array.from(new Set(suggestions)).filter(
+        (suggestion) => suggestion.toLowerCase() !== keyword.toLowerCase()
+      );
+
+      console.log("Suggestions:", uniqueSuggestions);
+
+      res.status(200).json({
+        success: true,
+        message: "Keyword suggestions fetched successfully!",
+        suggestions: uniqueSuggestions,
+      });
+    } catch (error: any) {
+      console.error("Error fetching suggested keywords:", error.message);
+      res.status(500).json({ error: "Failed to fetch keyword suggestions" });
+    }
+  }
+
+  private extractContextualKeywords(text: string, keyword: string): string[] {
+    if (!text || !keyword) return [];
+
+    const normalizedText = text.toLowerCase();
+    const normalizedKeyword = keyword.toLowerCase();
+
+    // Split the keyword into multiple words if necessary
+    const keywordWords = normalizedKeyword.split(/\s+/);
+
+    // Split the text into words
+    const words = normalizedText.split(/\s+/);
+    const suggestions: string[] = [];
+
+    // Extract phrases containing the entire keyword or parts of it
+    words.forEach((word, index) => {
+      const phrase = words.slice(index - 2, index + 3).join(" "); // Extract up to 2 words before and 2 words after
+
+      if (keywordWords.every((keywordWord) => phrase.includes(keywordWord))) {
+        if (phrase.trim().length > 0) {
+          suggestions.push(phrase);
+        }
+      }
+    });
+
+    // Ensure unique suggestions and trim whitespace
+    return Array.from(new Set(suggestions.map((phrase) => phrase.trim())));
   }
 
   private async logSearchKeyword(keyword: string): Promise<void> {

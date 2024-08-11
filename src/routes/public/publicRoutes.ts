@@ -92,6 +92,7 @@ router.get("/brands/details/:id", brandListingController.getBrandById);
 const searchController = new SearchController();
 
 router.get("/search-results", searchController.getSearchResults);
+router.get("/search-suggestion", searchController.getSuggestedKeywords);
 router.get("/popular-searches", searchController.getPopularSearches);
 
 // Store Routes

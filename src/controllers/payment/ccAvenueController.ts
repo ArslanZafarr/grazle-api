@@ -36,7 +36,7 @@ export async function initiatePayment(req: Request, res: Response) {
       payment_option,
       card_type,
       card_name,
-      data_accept : "Y",
+      data_accept: "Y",
       card_number,
       expiry_month,
       expiry_year,
