@@ -93,6 +93,10 @@ class PaymentController {
     try {
       // Decrypt the response using the working key
       const decryptedResponse = this.decrypt(encResp, this.workingKey);
+      console.log(
+        "🚀 ~ PaymentController ~ decryptedResponse:",
+        decryptedResponse
+      );
 
       // Parse the decrypted response into an object
       const responseParams = decryptedResponse
@@ -139,12 +143,17 @@ class PaymentController {
   private decrypt = (encText: string, workingKey: string): string => {
     try {
       const key = CryptoJS.MD5(workingKey);
-      const iv = CryptoJS.enc.Utf8.parse(
+      const iv = CryptoJS.enc.Latin1.parse(
         "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f"
       );
 
+      // Convert the encrypted text from hex to CipherParams
+      const cipherParams = CryptoJS.lib.CipherParams.create({
+        ciphertext: CryptoJS.enc.Hex.parse(encText),
+      });
+
       // Decrypting the string using AES and the provided key and IV
-      const decrypted = CryptoJS.AES.decrypt(encText, key, {
+      const decrypted = CryptoJS.AES.decrypt(cipherParams, key, {
         iv,
         mode: CryptoJS.mode.CBC,
         padding: CryptoJS.pad.Pkcs7,
@@ -152,8 +161,8 @@ class PaymentController {
 
       // Convert the decrypted value to a UTF-8 string
       return decrypted.toString(CryptoJS.enc.Utf8);
-    } catch (error) {
-      console.error("Decryption failed:", error);
+    } catch (error: any) {
+      console.error("Decryption failed test:", error.message);
       throw new Error("Decryption failed");
     }
   };
