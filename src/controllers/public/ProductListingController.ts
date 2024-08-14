@@ -175,32 +175,42 @@ export class ProductListingController {
       const productRepository = appDataSource.getRepository(Product);
       const reviewRepository = appDataSource.getRepository(Review);
 
-      const queryBuilder = productRepository
+      const distinctProductIds = productRepository
         .createQueryBuilder("product")
-        .leftJoinAndSelect("product.offer", "offer")
-        .leftJoinAndSelect("product.gallery", "gallery")
-        .orderBy("product.created_at", "DESC"); // Order by creation date in descending order
+        .select(["product.id", "product.created_at"])
+        .orderBy("product.created_at", "DESC");
 
       if (categoryId) {
-        queryBuilder.andWhere("product.category_id = :categoryId", {
+        distinctProductIds.andWhere("product.category_id = :categoryId", {
           categoryId: Number(categoryId),
         });
       }
 
       if (brandId) {
-        queryBuilder.andWhere("product.brand_id = :brandId", {
+        distinctProductIds.andWhere("product.brand_id = :brandId", {
           brandId: Number(brandId),
         });
       }
 
-      const pagination = await paginate<Product>(queryBuilder, {
+      // Paginate based on distinct product IDs
+      const paginatedIds = await paginate<{ id: number }>(distinctProductIds, {
         page: Number(page),
         limit: Number(limit),
       });
 
+      // Fetch full product details for the paginated product IDs
+      const queryBuilder = productRepository
+        .createQueryBuilder("product")
+        .leftJoinAndSelect("product.offer", "offer")
+        .leftJoinAndSelect("product.gallery", "gallery")
+        .whereInIds(paginatedIds.items.map((item) => item.id))
+        .orderBy("product.created_at", "DESC");
+
+      const products = await queryBuilder.getMany();
+
       // Fetch reviews for each product
       const productsWithReviews = await Promise.all(
-        pagination.items.map(async (product) => {
+        products.map(async (product) => {
           const reviews = await reviewRepository.find({
             where: { product_id: product.id },
             order: { created_at: "DESC" },
@@ -213,7 +223,6 @@ export class ProductListingController {
                 totalReviews
               : 0;
 
-          // Attach reviews, average rating, and total reviews to the product
           return {
             ...product,
             featured_image: product?.featured_image
@@ -231,10 +240,10 @@ export class ProductListingController {
 
       res.status(200).json({
         products: productsWithReviews,
-        total: pagination.meta.totalItems,
-        page: pagination.meta.currentPage,
-        limit: pagination.meta.itemsPerPage,
-        totalPages: pagination.meta.totalPages,
+        total: paginatedIds.meta.totalItems,
+        page: paginatedIds.meta.currentPage,
+        limit: paginatedIds.meta.itemsPerPage,
+        totalPages: paginatedIds.meta.totalPages,
         success: true,
         message: "Products retrieved successfully!",
       });

@@ -47,7 +47,8 @@ export class StoreController {
       const productRepository = appDataSource.getRepository(Product);
       let queryBuilder = productRepository
         .createQueryBuilder("product")
-        .where("product.user_id = :userId", { userId: userIdNumber });
+        .where("product.user_id = :userId", { userId: userIdNumber })
+        .orderBy("product.created_at", "DESC");
 
       // Sorting based on latest_arrival parameter
       if (latest_arrival) {
