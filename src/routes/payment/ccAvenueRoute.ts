@@ -37,4 +37,12 @@ router.post(
   PaymentController.postResponse
 );
 
+router.post(
+  "/checkout/response",
+  parsing,
+  [body("encResp").notEmpty().withMessage("The encResp field is required")],
+
+  PaymentController.postResponseMembershipPayment
+);
+
 export default router;
