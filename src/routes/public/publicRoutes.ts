@@ -18,6 +18,10 @@ const router = Router();
 const productListingController = new ProductListingController();
 
 router.get("/products", productListingController.getAllProducts);
+router.get(
+  "/products-default",
+  productListingController.getAllProductsWithoutPagination
+);
 router.get("/products/:slug", productListingController.getProductBySlug);
 router.get("/products/details/:id", productListingController.getProductById);
 router.get(
@@ -92,6 +96,10 @@ router.get("/brands/details/:id", brandListingController.getBrandById);
 const searchController = new SearchController();
 
 router.get("/search-results", searchController.getSearchResults);
+router.get(
+  "/search-results-default",
+  searchController.getSearchResultsWithoutPagination
+);
 router.get("/search-suggestion", searchController.getSuggestedKeywords);
 router.get("/popular-searches", searchController.getPopularSearches);
 
@@ -100,6 +108,10 @@ router.get("/popular-searches", searchController.getPopularSearches);
 const storeController = new StoreController();
 
 router.get("/store/:id/products", storeController.getStoreDetailsWithProducts);
+router.get(
+  "/store-default/:id/products",
+  storeController.getStoreDetailsWithProductsWithoutPagination
+);
 
 // Store Routes
 const customerSupportController = new CustomerSupportPublic();

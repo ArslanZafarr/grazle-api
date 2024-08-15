@@ -107,6 +107,14 @@ class PaymentController {
           return acc;
         }, {} as Record<string, string>);
 
+      console.log("🚀 ~ PaymentController ~ responseParams:", responseParams);
+
+      const paymentStatus = responseParams.order_status;
+      console.log("🚀 ~ PaymentController ~ paymentStatus:", paymentStatus);
+
+      // const paymentStatus = responseParams.order_status;
+      // const paymentStatus = responseParams.order_status;
+
       // Send the parsed response as JSON
       res.status(200).json({
         success: true,

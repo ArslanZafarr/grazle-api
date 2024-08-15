@@ -256,6 +256,85 @@ export class ProductListingController {
     }
   }
 
+  async getAllProductsWithoutPagination(req: Request, res: Response) {
+    try {
+      const { categoryId, brandId } = req.query;
+      const productRepository = appDataSource.getRepository(Product);
+      const reviewRepository = appDataSource.getRepository(Review);
+
+      const distinctProductIds = productRepository
+        .createQueryBuilder("product")
+        .select(["product.id", "product.created_at"])
+        .orderBy("product.created_at", "DESC");
+
+      if (categoryId) {
+        distinctProductIds.andWhere("product.category_id = :categoryId", {
+          categoryId: Number(categoryId),
+        });
+      }
+
+      if (brandId) {
+        distinctProductIds.andWhere("product.brand_id = :brandId", {
+          brandId: Number(brandId),
+        });
+      }
+
+      // Fetch full product details for all distinct product IDs
+      const productIds = await distinctProductIds.getMany();
+      const queryBuilder = productRepository
+        .createQueryBuilder("product")
+        .leftJoinAndSelect("product.offer", "offer")
+        .leftJoinAndSelect("product.gallery", "gallery")
+        .whereInIds(productIds.map((item) => item.id))
+        .orderBy("product.created_at", "DESC");
+
+      const products = await queryBuilder.getMany();
+
+      // Fetch reviews for each product
+      const productsWithReviews = await Promise.all(
+        products.map(async (product) => {
+          const reviews = await reviewRepository.find({
+            where: { product_id: product.id },
+            order: { created_at: "DESC" },
+          });
+
+          const totalReviews = reviews.length;
+          const averageRating =
+            totalReviews > 0
+              ? reviews.reduce((sum, review) => sum + review.rating, 0) /
+                totalReviews
+              : 0;
+
+          return {
+            ...product,
+            featured_image: product?.featured_image
+              ? `${BASE_URL}${product?.featured_image}`
+              : null,
+            gallery: product.gallery.map((image) => ({
+              ...image,
+              image: `${BASE_URL}${image.image}`,
+            })),
+            rating: averageRating.toFixed(1),
+            reviews: totalReviews,
+          };
+        })
+      );
+
+      res.status(200).json({
+        products: productsWithReviews,
+        total: productsWithReviews.length,
+        success: true,
+        message: "Products retrieved successfully!",
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to retrieve products",
+        error: error.message,
+      });
+    }
+  }
+
   async getProductBySlug(req: Request, res: Response) {
     try {
       const { slug } = req.params;
