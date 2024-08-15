@@ -13,7 +13,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-
 export const sendOrderConfirmationEmail = async (
   email: string,
   tracking_id: string
@@ -55,6 +54,64 @@ export const sendOrderConfirmationEmail = async (
   }
 };
 
+export const sendMembershipActivationEmail = async (
+  email: string,
+  membershipPlanName: string,
+  startDate: Date,
+  endDate: Date
+) => {
+  const formattedStartDate = startDate.toLocaleDateString();
+  const formattedEndDate = endDate.toLocaleDateString();
+
+  const emailText = `Dear Customer,
+
+  We are excited to confirm the activation of your membership plan: ${membershipPlanName}. Your membership is now active.
+
+  Membership Details:
+  - Plan: ${membershipPlanName}
+  - Start Date: ${formattedStartDate}
+  - End Date: ${formattedEndDate}
+
+  Thank you for being a valued member of our community.
+
+  Best regards,
+  The Grazle Team`;
+
+  const emailHtml = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+      <h2 style="color: #333;">Membership Activation Confirmation</h2>
+      <p>Dear Customer,</p>
+      <p>We are excited to confirm the activation of your membership plan: <strong>${membershipPlanName}</strong>. Your membership is now active.</p>
+      <p><strong>Membership Details:</strong></p>
+      <ul>
+        <li>Plan: ${membershipPlanName}</li>
+        <li>Start Date: ${formattedStartDate}</li>
+        <li>End Date: ${formattedEndDate}</li>
+      </ul>
+      <p>Thank you for being a valued member of our community.</p>
+      <p>Best regards,</p>
+      <p><strong>The Grazle Team</strong></p>
+    </div>
+  `;
+
+  const mailOptions = {
+    from: '"Grazle" <info@grazle.co.in>',
+    to: email,
+    subject: "Membership Plan Activation Confirmation",
+    text: emailText,
+    html: emailHtml,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("Membership activation confirmation email sent successfully");
+  } catch (error) {
+    console.error(
+      "Error sending membership activation confirmation email:",
+      error
+    );
+  }
+};
 
 export const sendOrderStatusUpdateEmail = async (
   email: string,
