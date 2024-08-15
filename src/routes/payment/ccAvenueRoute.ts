@@ -38,7 +38,7 @@ router.post(
 );
 
 router.post(
-  "/checkout/response",
+  "/checkout/response/membership-plan",
   parsing,
   [body("encResp").notEmpty().withMessage("The encResp field is required")],
 
