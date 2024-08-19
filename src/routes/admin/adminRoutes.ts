@@ -17,6 +17,7 @@ import fs from "fs";
 import { MembershipPlanController } from "../../controllers/admin/MembershipPlanController";
 import { StateController } from "../../controllers/admin/StateController";
 import { CityController } from "../../controllers/admin/CityController";
+import { sendAdminNotification } from "../../controllers/admin/PushNotificationController";
 
 const router = express.Router();
 const multer = require("multer");
@@ -544,6 +545,18 @@ router.get(
   "/admin/cities/state/:id",
   adminMiddleware,
   cityController.findByState
+);
+
+router.post(
+  "/admin/push-notification",
+
+  adminMiddleware,
+  parsing,
+  [
+    body("title").notEmpty().withMessage("The title field is required"),
+    body("body").notEmpty().withMessage("The body field is required"),
+  ],
+  sendAdminNotification
 );
 
 export default router;

@@ -17,6 +17,8 @@ import {
 } from "../../services/emailService";
 import { OrderProduct } from "../../entities/OrderProduct";
 import { OrderStatusHistory } from "../../entities/OrderHistory";
+import { UserDeviceToken } from "../../entities/UserDeviceToken";
+import { sendPushNotification } from "../../services/notificationService";
 
 const omitTimestamps = (order: Order) => {
   const { created_at, updated_at, ...rest } = order;
@@ -106,6 +108,8 @@ export class OrderController {
     try {
       // Create a new order instance
       const orderRepository = appDataSource.getRepository(Order);
+      const deviceTokenRepo = appDataSource.getRepository(UserDeviceToken);
+
       const order = new Order();
       order.user_id = userId;
       order.date = date;
@@ -194,6 +198,31 @@ export class OrderController {
           user.email,
           savedOrder?.tracking_id || ""
         );
+
+        // Convert user_id to string if necessary
+        const userId = user?.id?.toString();
+
+        if (userId) {
+          // Find the device token for the user
+          const deviceTokenRecord = await deviceTokenRepo.findOne({
+            where: { user_id: userId },
+          });
+
+          if (deviceTokenRecord) {
+            const token = deviceTokenRecord.device_token;
+
+            // Send push notification
+            await sendPushNotification(
+              token,
+              "Order Placed",
+              `Your order with ID ${savedOrder?.tracking_id} has been placed successfully.`,
+              { orderId: savedOrder?.tracking_id }
+            );
+          } else {
+            // No device token found
+            console.log("No device token found for user:", userId);
+          }
+        }
       }
 
       // Respond with the created order
@@ -236,7 +265,6 @@ export class OrderController {
       ];
       if (status && validStatuses.includes(status as string)) {
         queryBuilder.andWhere("statusHistory.status = :status", { status });
-        // queryBuilder = queryBuilder.andWhere("order.status = :status", {  status, });
       }
 
       // Define pagination options
@@ -893,6 +921,7 @@ export class OrderController {
       }
 
       const orderRepo = appDataSource.getRepository(Order);
+      const deviceTokenRepo = appDataSource.getRepository(UserDeviceToken);
 
       // Fetch the order to update
       let order = await orderRepo.findOne({
@@ -916,13 +945,40 @@ export class OrderController {
       const updatedOrder = await orderRepo.save(order);
 
       const userRepo = appDataSource.getRepository(User);
-      const user = await userRepo.findOne({ where: { id: updatedOrder.user_id } });
+      const user = await userRepo.findOne({
+        where: { id: updatedOrder.user_id },
+      });
 
       if (payment_status === "paid" && user && user.email) {
         await sendOrderConfirmationEmail(
           user.email,
           updatedOrder?.tracking_id || ""
         );
+
+        // Convert user_id to string if necessary
+        const userId = user?.id?.toString();
+
+        if (userId) {
+          // Find the device token for the user
+          const deviceTokenRecord = await deviceTokenRepo.findOne({
+            where: { user_id: userId },
+          });
+
+          if (deviceTokenRecord) {
+            const token = deviceTokenRecord.device_token;
+
+            // Send push notification
+            await sendPushNotification(
+              token,
+              "Order Placed",
+              `Your order with ID ${updatedOrder.tracking_id} has been placed successfully.`,
+              { orderId: updatedOrder.tracking_id }
+            );
+          } else {
+            // No device token found
+            console.log("No device token found for user:", userId);
+          }
+        }
       }
 
       res.status(200).json({

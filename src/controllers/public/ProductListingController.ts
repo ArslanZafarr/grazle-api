@@ -169,6 +169,8 @@ const omitProfileTimestamps = (profile: any): ProfileWithoutTtimestamps => {
 };
 
 export class ProductListingController {
+
+  
   async getAllProducts(req: Request, res: Response) {
     try {
       const { categoryId, brandId, page = 1, limit = 10 } = req.query;
