@@ -32,6 +32,10 @@ router.get("/products-dynamic", getProductsDynamically);
 router.get("/related-product", productListingController.relatedProduct);
 router.get("/product-offers", productListingController.getAllProductsWithOffer);
 router.get(
+  "/product-offers-default",
+  productListingController.getAllProductsWithOfferWithoutPagination
+);
+router.get(
   "/product-offers/:userId",
   productListingController.getProductsByUserIdWithOffer
 );

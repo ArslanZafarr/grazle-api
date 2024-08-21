@@ -102,7 +102,7 @@ export class AuthController {
         storeProfile = await appDataSource.manager.save(newStoreProfile);
       }
 
-      const expiresInOneDay = ms("3d");
+      const expiresInOneDay = ms("14d");
 
       const token = jwt.sign({ userId: newUser.id, role: role }, JWT_SECRET, {
         expiresIn: expiresInOneDay / 1000,

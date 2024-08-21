@@ -5,7 +5,7 @@ import { sendPushNotifications } from "../../services/notificationService";
 import { validationResult } from "express-validator";
 
 export const sendAdminNotification = async (req: Request, res: Response) => {
-  const { title, body, data } = req.body; // Include data in request body
+  const { title, body, data, thumbnail, url } = req.body; // Include url in request body
 
   // Validation Error Handling
   const errors = validationResult(req);
@@ -45,7 +45,7 @@ export const sendAdminNotification = async (req: Request, res: Response) => {
 
     if (tokens.length > 0) {
       // Send notifications to all device tokens
-      await sendPushNotifications(tokens, title, body, data);
+      await sendPushNotifications(tokens, title, body, data, thumbnail, url);
       res.status(200).json({
         success: true,
         message: "Notifications sent by admin",
