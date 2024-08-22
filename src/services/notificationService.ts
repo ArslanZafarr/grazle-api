@@ -12,11 +12,11 @@ export const sendPushNotifications = async (
     notification: {
       title,
       body,
-      image: thumbnail, // Add the thumbnail URL here
+      image: thumbnail,
     },
     data: {
       ...data,
-      url, // Add the custom URL here
+      url,
     },
     tokens,
   };

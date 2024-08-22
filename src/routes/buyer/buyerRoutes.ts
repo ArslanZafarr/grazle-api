@@ -50,6 +50,11 @@ router.put(
 const orderController = new OrderController();
 router.get("/buyer/orders", authMiddleware, orderController.getAllOrders);
 router.get(
+  "/buyer/orders-default",
+  authMiddleware,
+  orderController.getAllOrdersWithoutPagination
+);
+router.get(
   "/buyer/multi-orders/:ref_id",
   authMiddleware,
   orderController.getMultiOrderByRefId
@@ -91,7 +96,7 @@ router.put(
     body("payment_status")
       .notEmpty()
       .withMessage("The payment_status field is required"),
-      body("transaction_id")
+    body("transaction_id")
       .notEmpty()
       .withMessage("The transaction_id field is required"),
   ],
