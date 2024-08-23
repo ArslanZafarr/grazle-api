@@ -243,7 +243,6 @@ export class ProductController {
           productVariant.variant = variant.variant;
           productVariant.price = variant.price;
           productVariant.color = variant.color;
-          productVariant.measurements = variant.measurements;
           productVariant.product = product;
           return productVariant;
         });
@@ -741,7 +740,6 @@ export class ProductController {
           productVariant.variant = variant.variant;
           productVariant.price = variant.price;
           productVariant.color = variant.color;
-          productVariant.measurements = variant.measurements;
           productVariant.product = product;
           return productVariant;
         });

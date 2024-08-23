@@ -255,17 +255,28 @@ export class OrderController {
         .where("order.user_id = :userId", { userId })
         .orderBy("order.created_at", "DESC");
 
-      // Apply status filter if status is provided and valid
-      const validStatuses = [
-        "new",
-        "in_progress",
-        "shipped",
-        "completed",
-        "cancelled",
-      ];
-      if (status && validStatuses.includes(status as string)) {
-        queryBuilder.andWhere("statusHistory.status = :status", { status });
-      }
+  
+          // Apply status filter only if status is provided and valid
+    const validStatuses = [
+      "new",
+      "in_progress",
+      "shipped",
+      "completed",
+      "cancelled",
+    ];
+    if (status && validStatuses.includes(status as string)) {
+      queryBuilder.andWhere(qb => {
+        const subQuery = qb.subQuery()
+          .select("MAX(statusHistory.changed_at)")
+          .from(OrderStatusHistory, "statusHistory")
+          .where("statusHistory.order_id = order.id")
+          .getQuery();
+
+        return `statusHistory.changed_at = ${subQuery} AND statusHistory.status = :status`;
+      }, { status });
+    }
+
+
 
       // Define pagination options
       const options: IPaginationOptions = {
@@ -403,6 +414,9 @@ export class OrderController {
       res.status(500).json({ error: "Failed to fetch orders" });
     }
   }
+
+
+  
 
   async getAllOrdersWithoutPagination(req: Request, res: Response) {
     try {
@@ -723,6 +737,8 @@ export class OrderController {
         relations: ["orderProducts", "orderProducts.product", "status_history"],
       });
 
+      console.log("order get", order);
+
       if (!order) {
         return res.status(404).json({
           error: "Order not found",
@@ -733,8 +749,9 @@ export class OrderController {
 
       const addressRepo = appDataSource.getRepository(Address);
       const address = await addressRepo.findOne({
-        where: { id: order.address_id },
+        where: { id: 1 },
       });
+      console.log("🚀 ~ OrderController ~ getOrderById ~ address:", address);
 
       // Store user, category, and brand information to avoid multiple queries
       const userCache: Record<string, User> = {};

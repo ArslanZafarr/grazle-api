@@ -525,6 +525,8 @@ export class ProductListingController {
         orderProducts: [],
         faqs: product.faqs,
         product_info: product.product_info,
+        dimensions : product.dimensions,
+        sku : product.sku
       };
 
       const productWithoutTimestamps = await omitProductTtimestamps(
@@ -760,6 +762,8 @@ export class ProductListingController {
         orderProducts: [],
         faqs: product.faqs,
         product_info: product.product_info,
+        dimensions : product.dimensions,
+        sku : product.sku
       };
 
       const productWithoutTimestamps = await omitProductTtimestamps(
