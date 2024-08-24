@@ -505,7 +505,7 @@ export class ProductController {
 
       const product = await productRepository.findOne({
         where: { id: parseInt(id) },
-        relations: ["gallery", "faqs", "variants", "product_dimensions"],
+        relations: ["gallery", "faqs", "variants", "dimensions"],
       });
 
       if (!product) {
@@ -652,7 +652,7 @@ export class ProductController {
 
       const updatedProduct = await productRepository.findOne({
         where: { id: product.id },
-        relations: ["gallery", "faqs", "variants", "product_dimensions"],
+        relations: ["gallery", "faqs", "variants", "dimensions"],
       });
 
       if (updatedProduct) {

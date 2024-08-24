@@ -255,28 +255,30 @@ export class OrderController {
         .where("order.user_id = :userId", { userId })
         .orderBy("order.created_at", "DESC");
 
-  
-          // Apply status filter only if status is provided and valid
-    const validStatuses = [
-      "new",
-      "in_progress",
-      "shipped",
-      "completed",
-      "cancelled",
-    ];
-    if (status && validStatuses.includes(status as string)) {
-      queryBuilder.andWhere(qb => {
-        const subQuery = qb.subQuery()
-          .select("MAX(statusHistory.changed_at)")
-          .from(OrderStatusHistory, "statusHistory")
-          .where("statusHistory.order_id = order.id")
-          .getQuery();
+      // Apply status filter only if status is provided and valid
+      const validStatuses = [
+        "new",
+        "in_progress",
+        "shipped",
+        "completed",
+        "cancelled",
+      ];
 
-        return `statusHistory.changed_at = ${subQuery} AND statusHistory.status = :status`;
-      }, { status });
-    }
+      if (status && validStatuses.includes(status as string)) {
+        queryBuilder.andWhere(
+          (qb) => {
+            const subQuery = qb
+              .subQuery()
+              .select("MAX(statusHistory.changed_at)")
+              .from(OrderStatusHistory, "statusHistory")
+              .where("statusHistory.order_id = order.id")
+              .getQuery();
 
-
+            return `statusHistory.changed_at = ${subQuery} AND statusHistory.status = :status`;
+          },
+          { status }
+        );
+      }
 
       // Define pagination options
       const options: IPaginationOptions = {
@@ -415,9 +417,6 @@ export class OrderController {
     }
   }
 
-
-  
-
   async getAllOrdersWithoutPagination(req: Request, res: Response) {
     try {
       const user = (req as any).user;
@@ -444,8 +443,21 @@ export class OrderController {
         "completed",
         "cancelled",
       ];
+
       if (status && validStatuses.includes(status as string)) {
-        queryBuilder.andWhere("statusHistory.status = :status", { status });
+        queryBuilder.andWhere(
+          (qb) => {
+            const subQuery = qb
+              .subQuery()
+              .select("MAX(statusHistory.changed_at)")
+              .from(OrderStatusHistory, "statusHistory")
+              .where("statusHistory.order_id = order.id")
+              .getQuery();
+
+            return `statusHistory.changed_at = ${subQuery} AND statusHistory.status = :status`;
+          },
+          { status }
+        );
       }
 
       // Fetch all orders without pagination

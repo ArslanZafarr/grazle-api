@@ -29,6 +29,14 @@ router.post(
     body("recipient_phone")
       .notEmpty()
       .withMessage("The recipient_phone field is required"),
+
+    body("pin_code")
+      .notEmpty()
+      .withMessage("The pin_code field is required")
+      .isLength({ min: 6, max: 6 })
+      .withMessage("The pin_code must be 6 digits long")
+      .matches(/^\d+$/)
+      .withMessage("The pin_code must be a numeric value"),
   ],
   addressesController.create
 );
