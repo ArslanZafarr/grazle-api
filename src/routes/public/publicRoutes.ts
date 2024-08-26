@@ -125,7 +125,6 @@ router.post(
   [
     body("name").notEmpty().withMessage("The name field is required"),
     body("email").notEmpty().withMessage("The email field is required"),
-
     body("message").notEmpty().withMessage("The message field is required"),
   ],
   customerSupportController.create

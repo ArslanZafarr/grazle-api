@@ -34,6 +34,8 @@ export class SearchController {
         limit = 10,
         category_id,
         brand_id,
+        more_suitable,
+        discount,
       } = req.query;
 
       const minPrice = parseFloat(min_price as string);
@@ -52,10 +54,14 @@ export class SearchController {
       const distinctProductIds = productRepository
         .createQueryBuilder("product")
         .select("product.id")
+
         .where(
           "product.title LIKE :keywords OR product.description LIKE :keywords OR product.tags LIKE :keywords",
           { keywords: `%${keywords}%` }
-        );
+        )
+        .leftJoin("product.reviews", "review")
+        .addSelect("COUNT(review.id)", "reviewCount")
+        .groupBy("product.id");
 
       if (category_id) {
         distinctProductIds.andWhere("product.category_id = :category_id", {
@@ -111,6 +117,22 @@ export class SearchController {
           .leftJoin("product.reviews", "review")
           .groupBy("product.id")
           .orderBy("COUNT(review.id)", "DESC");
+      }
+
+      // Apply more_suitable=suitable filter
+      if (more_suitable === "suitable") {
+        // Apply combination of discount and popular
+        distinctProductIds
+          .andWhere("product.discount IS NOT NULL AND product.discount > 0") // Assuming discount is a column in the product entity
+          .addOrderBy("reviewCount", "DESC"); // Sort by popularity
+      }
+
+      // Apply discount filter
+      if (discount === "discount") {
+        distinctProductIds.andWhere(
+          "product.discount IS NOT NULL AND product.discount > 0"
+        );
+        distinctProductIds.addOrderBy("product.discount", "DESC");
       }
 
       // Apply pagination
@@ -260,6 +282,8 @@ export class SearchController {
         max_price,
         category_id,
         brand_id,
+        more_suitable,
+        discount,
       } = req.query;
 
       // Convert prices to numbers
@@ -281,6 +305,7 @@ export class SearchController {
       let query = productRepository
         .createQueryBuilder("product")
         .leftJoinAndSelect("product.gallery", "gallery");
+        
 
       // Apply category filter if provided
       if (category_id) {
@@ -354,6 +379,22 @@ export class SearchController {
       // Apply popular filter if provided
       if (popular === "popular") {
         query = query.addOrderBy("reviewCount", "DESC");
+      }
+
+      // Apply more_suitable=suitable filter
+      if (more_suitable === "suitable") {
+        // Apply combination of discount and popular
+        query = query
+          .andWhere("product.discount IS NOT NULL AND product.discount > 0") // Assuming discount is a column in the product entity
+          .addOrderBy("reviewCount", "DESC"); // Sort by popularity
+      }
+
+      // Apply discount filter
+      if (discount === "discount") {
+        query = query.andWhere(
+          "product.discount IS NOT NULL AND product.discount > 0"
+        );
+        query = query.addOrderBy("product.discount", "DESC");
       }
 
       // Sort by category_id

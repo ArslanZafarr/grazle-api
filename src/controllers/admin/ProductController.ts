@@ -409,7 +409,9 @@ export class ProductController {
                     phone: user.profile.phone,
                   },
                   store_profile: {
-                    store_name: user.store_profile.store_name,
+                    store_name: user?.store_profile?.store_name
+                      ? user?.store_profile?.store_name
+                      : null,
                     store_image: user.store_profile.store_image
                       ? `${BASE_URL}${user.store_profile.store_image}`
                       : null,
