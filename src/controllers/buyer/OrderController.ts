@@ -365,6 +365,7 @@ export class OrderController {
                 ? `${BASE_URL}${product.featured_image}`
                 : null,
               price: product.price,
+              order_price : orderProduct.price,
               description: product.description,
               tags: product.tags,
               gallery: product.gallery,
@@ -539,6 +540,7 @@ export class OrderController {
                 ? `${BASE_URL}${product.featured_image}`
                 : null,
               price: product.price,
+              order_price : orderProduct.price,
               description: product.description,
               tags: product.tags,
               gallery: product.gallery,
@@ -763,8 +765,7 @@ export class OrderController {
       const address = await addressRepo.findOne({
         where: { id: 1 },
       });
-      console.log("🚀 ~ OrderController ~ getOrderById ~ address:", address);
-
+   
       // Store user, category, and brand information to avoid multiple queries
       const userCache: Record<string, User> = {};
       const categoryCache: Record<string, Category> = {};
@@ -830,6 +831,7 @@ export class OrderController {
               ? `${BASE_URL}${product.featured_image}`
               : null,
             price: product.price,
+            order_price : orderProduct.price,
             description: product.description,
             tags: product.tags,
             gallery: product.gallery,
