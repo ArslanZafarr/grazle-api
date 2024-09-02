@@ -10,6 +10,7 @@ import { BannerController } from "../../controllers/public/BannerController";
 import { getProductsDynamically } from "../../controllers/public/DynamicProducts";
 import { StateController } from "../../controllers/admin/StateController";
 import { StatesCitiesController } from "../../controllers/public/StatesCitiesController";
+import { NotificationController } from "../../controllers/public/NotificationController";
 
 const router = Router();
 
@@ -145,5 +146,15 @@ router.get("/cities-by-state/:id", statesCitiesController.findCitiesByState);
 router.get("/cities", statesCitiesController.findAllCities);
 router.get("/states/:id", statesCitiesController.findOneState);
 router.get("/cities/:id", statesCitiesController.findOneCity);
+
+// Notification Routes
+
+const notificationController = new NotificationController();
+
+router.get(
+  "/latest-notifications/:id",
+  notificationController.getUserNotifications
+);
+router.get("/all-notifications/:id", notificationController.seeAllNotifications);
 
 export default router;

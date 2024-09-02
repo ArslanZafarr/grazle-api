@@ -22,10 +22,12 @@ export const sendPushNotifications = async (
   };
 
   try {
+
     const response = await fcm.sendEachForMulticast(message);
-    console.log("Successfully sent messages:", response);
-  } catch (error) {
-    console.log("Error sending messages:", error);
+    // const response = await fcm.sendEachForMulticast(message);
+    console.log("Successfully sent messages:", response.responses);
+  } catch (error : any) {
+    console.log("Error sending messages:", error.message);
   }
 };
 

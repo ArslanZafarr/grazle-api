@@ -19,6 +19,7 @@ import { OrderProduct } from "../../entities/OrderProduct";
 import { OrderStatusHistory } from "../../entities/OrderHistory";
 import { UserDeviceToken } from "../../entities/UserDeviceToken";
 import { sendPushNotification } from "../../services/notificationService";
+import { Notification } from "../../entities/Notification";
 
 const omitTimestamps = (order: Order) => {
   const { created_at, updated_at, ...rest } = order;
@@ -109,6 +110,7 @@ export class OrderController {
       // Create a new order instance
       const orderRepository = appDataSource.getRepository(Order);
       const deviceTokenRepo = appDataSource.getRepository(UserDeviceToken);
+      const notificationRepo = appDataSource.getRepository(Notification);
 
       const order = new Order();
       order.user_id = userId;
@@ -198,6 +200,14 @@ export class OrderController {
           user.email,
           savedOrder?.tracking_id || ""
         );
+
+        // Create notification
+        const notification = new Notification();
+        notification.user_id = savedOrder?.user_id || null;
+        notification.title = "Order Confirmation";
+        notification.body = `Your order with ID ${savedOrder?.tracking_id} has been placed successfully.`;
+
+        await notificationRepo.save(notification);
 
         // Convert user_id to string if necessary
         const userId = user?.id?.toString();
@@ -365,7 +375,7 @@ export class OrderController {
                 ? `${BASE_URL}${product.featured_image}`
                 : null,
               price: product.price,
-              order_price : orderProduct.price,
+              order_price: orderProduct.price,
               description: product.description,
               tags: product.tags,
               gallery: product.gallery,
@@ -540,7 +550,7 @@ export class OrderController {
                 ? `${BASE_URL}${product.featured_image}`
                 : null,
               price: product.price,
-              order_price : orderProduct.price,
+              order_price: orderProduct.price,
               description: product.description,
               tags: product.tags,
               gallery: product.gallery,
@@ -765,7 +775,7 @@ export class OrderController {
       const address = await addressRepo.findOne({
         where: { id: 1 },
       });
-   
+
       // Store user, category, and brand information to avoid multiple queries
       const userCache: Record<string, User> = {};
       const categoryCache: Record<string, Category> = {};
@@ -831,7 +841,7 @@ export class OrderController {
               ? `${BASE_URL}${product.featured_image}`
               : null,
             price: product.price,
-            order_price : orderProduct.price,
+            order_price: orderProduct.price,
             description: product.description,
             tags: product.tags,
             gallery: product.gallery,
@@ -895,6 +905,7 @@ export class OrderController {
 
       const orderRepo = appDataSource.getRepository(Order);
       const statusHistoryRepo = appDataSource.getRepository(OrderStatusHistory);
+      const notificationRepo = appDataSource.getRepository(Notification);
 
       // Fetch the order to update
       const order = await orderRepo.findOne({
@@ -939,6 +950,14 @@ export class OrderController {
           user.email,
           order.reference_id
         );
+
+        // Create notification
+        const notification = new Notification();
+        notification.user_id = user?.id || null;
+        notification.title = "Order Confirmation";
+        notification.body = `Your order with ID ${order?.tracking_id} has been cancelled.`;
+
+        await notificationRepo.save(notification);
       }
 
       res.status(200).json({
@@ -1131,6 +1150,7 @@ export class OrderController {
 
       const orderRepo = appDataSource.getRepository(Order);
       const deviceTokenRepo = appDataSource.getRepository(UserDeviceToken);
+      const notificationRepo = appDataSource.getRepository(Notification);
 
       // Fetch the order to update
       let order = await orderRepo.findOne({
@@ -1163,6 +1183,14 @@ export class OrderController {
           user.email,
           updatedOrder?.tracking_id || ""
         );
+
+        // Create notification
+        const notification = new Notification();
+        notification.user_id = user?.id || null;
+        notification.title = "Order Confirmation";
+        notification.body = `Your order with ID ${order?.tracking_id} has been placed successfully.`;
+
+        await notificationRepo.save(notification);
 
         // Convert user_id to string if necessary
         const userId = user?.id?.toString();
