@@ -21,9 +21,11 @@ export class NotificationController {
         success: true,
         notifications,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching notifications:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      return res
+        .status(500)
+        .json({ message: "Internal server error", error: error.message });
     }
   };
 
