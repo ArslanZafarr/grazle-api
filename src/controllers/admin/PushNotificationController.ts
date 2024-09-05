@@ -40,28 +40,24 @@ export const sendAdminNotification = async (req: Request, res: Response) => {
 
   try {
     // Find all device tokens
+
+    const newNotification = new Notification();
+    newNotification.title = title;
+    newNotification.body = body;
+    newNotification.image = thumbnail;
+    newNotification.url = url;
+    newNotification.data = data;
+
+    // const createdNotification = await notificationRepo.save(newNotification);
+
     const deviceTokenRecords = await deviceTokenRepo.find();
     const tokens: string[] = deviceTokenRecords.map(
       (record) => record.device_token
     );
 
     if (tokens.length > 0) {
-      // Save the notification to the database
-      const notificationPromises = tokens.map((token) =>
-        notificationRepo.save({
-          title,
-          body,
-          data,
-          image: thumbnail,
-          url,
-        })
-      );
-
-      // Wait for all notifications to be saved
-      await Promise.all(notificationPromises);
-
-      // Send notifications to all device tokens
       await sendPushNotifications(tokens, title, body, data, thumbnail, url);
+      const createdNotification = await notificationRepo.save(newNotification);
 
       res.status(200).json({
         success: true,
