@@ -52,6 +52,7 @@ export const sendAdminNotification = async (req: Request, res: Response) => {
           title,
           body,
           data,
+          image: thumbnail,
           url,
         })
       );
