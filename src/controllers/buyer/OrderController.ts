@@ -773,7 +773,7 @@ export class OrderController {
 
       const addressRepo = appDataSource.getRepository(Address);
       const address = await addressRepo.findOne({
-        where: { id: 1 },
+        where: { id:  order.address_id },
       });
 
       // Store user, category, and brand information to avoid multiple queries
