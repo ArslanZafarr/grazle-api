@@ -43,26 +43,41 @@ export class SearchController {
 
       const categoryId = category_id ? Number(category_id) : null;
 
-      if (!keywords) {
-        return res.status(400).json({
-          success: false,
-          message: "Keyword is required for search.",
-        });
-      }
+      // if (!keywords) {
+      //   return res.status(400).json({
+      //     success: false,
+      //     message: "Keyword is required for search.",
+      //   });
+      // }
 
       const productRepository = appDataSource.getRepository(Product);
       const reviewRepository = appDataSource.getRepository(Review);
 
+      // const distinctProductIds = productRepository
+      //   .createQueryBuilder("product")
+      //   .select("product.id")
+      //   .where(
+      //     "(product.title LIKE :keywords OR product.description LIKE :keywords OR product.tags LIKE :keywords)",
+      //     { keywords: `%${keywords}%` }
+      //   )
+      //   .leftJoin("product.reviews", "review")
+      //   .addSelect("COUNT(review.id)", "reviewCount")
+      //   .groupBy("product.id");
+
       const distinctProductIds = productRepository
         .createQueryBuilder("product")
         .select("product.id")
-        .where(
-          "(product.title LIKE :keywords OR product.description LIKE :keywords OR product.tags LIKE :keywords)",
-          { keywords: `%${keywords}%` }
-        )
         .leftJoin("product.reviews", "review")
         .addSelect("COUNT(review.id)", "reviewCount")
         .groupBy("product.id");
+
+      // Apply keywords filter only if provided
+      if (keywords) {
+        distinctProductIds.where(
+          "(product.title LIKE :keywords OR product.description LIKE :keywords OR product.tags LIKE :keywords)",
+          { keywords: `%${keywords}%` }
+        );
+      }
 
       // Check if category_id exists and apply the filter conditionally
       if (categoryId) {
@@ -70,6 +85,13 @@ export class SearchController {
           category_id: categoryId,
         });
       }
+
+      // Check if category_id exists and apply the filter conditionally
+      // if (categoryId) {
+      //   distinctProductIds.andWhere("product.category_id = :category_id", {
+      //     category_id: categoryId,
+      //   });
+      // }
 
       // Log the generated query for debugging
       console.log("Generated SQL Query:", distinctProductIds.getQuery());
