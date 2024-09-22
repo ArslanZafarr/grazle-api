@@ -41,6 +41,8 @@ export class SearchController {
       const minPrice = parseFloat(min_price as string);
       const maxPrice = parseFloat(max_price as string);
 
+      const categoryId = category_id ? Number(category_id) : null;
+
       if (!keywords) {
         return res.status(400).json({
           success: false,
@@ -54,20 +56,23 @@ export class SearchController {
       const distinctProductIds = productRepository
         .createQueryBuilder("product")
         .select("product.id")
-
         .where(
-          "product.title LIKE :keywords OR product.description LIKE :keywords OR product.tags LIKE :keywords",
+          "(product.title LIKE :keywords OR product.description LIKE :keywords OR product.tags LIKE :keywords)",
           { keywords: `%${keywords}%` }
         )
         .leftJoin("product.reviews", "review")
         .addSelect("COUNT(review.id)", "reviewCount")
         .groupBy("product.id");
 
-      if (category_id) {
+      // Check if category_id exists and apply the filter conditionally
+      if (categoryId) {
         distinctProductIds.andWhere("product.category_id = :category_id", {
-          category_id: Number(category_id),
+          category_id: categoryId,
         });
       }
+
+      // Log the generated query for debugging
+      console.log("Generated SQL Query:", distinctProductIds.getQuery());
 
       if (brand_id) {
         distinctProductIds.andWhere("product.brand_id = :brand_id", {
