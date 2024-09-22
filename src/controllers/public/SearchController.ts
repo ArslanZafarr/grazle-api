@@ -136,6 +136,14 @@ export class SearchController {
       }
 
       // Apply pagination
+      // const paginatedIds = await paginate<{ id: number }>(distinctProductIds, {
+      //   page: Number(page),
+      //   limit: Number(limit),
+      // });
+      // Get total count of matching products for pagination
+      const totalCount = await distinctProductIds.getCount();
+
+      // Apply pagination
       const paginatedIds = await paginate<{ id: number }>(distinctProductIds, {
         page: Number(page),
         limit: Number(limit),
@@ -155,9 +163,11 @@ export class SearchController {
       }
 
       // const products = await productQuery.getMany();
-      const products = await productQuery
-        .orderBy("product.created_at", "DESC")
-        .getMany();
+      // const products = await productQuery
+      //   .orderBy("product.created_at", "DESC")
+      //   .getMany();
+
+      const products = await productQuery.getMany();
 
       const productsWithDetails = await Promise.all(
         products.map(async (product) => {
@@ -267,11 +277,24 @@ export class SearchController {
         (product) => product !== null
       );
 
+      // res.status(200).json({
+      //   success: true,
+      //   message: "Search results fetched successfully!",
+      //   products: filteredProducts,
+      //   meta: paginatedIds.meta,
+      // });
+
       res.status(200).json({
         success: true,
         message: "Search results fetched successfully!",
         products: filteredProducts,
-        meta: paginatedIds.meta,
+        meta: {
+          totalItems: totalCount,
+          itemCount: filteredProducts.length,
+          itemsPerPage: Number(limit),
+          totalPages: Math.ceil(totalCount / Number(limit)),
+          currentPage: Number(page),
+        },
       });
     } catch (error: any) {
       console.error("Error fetching search results:", error.message);
