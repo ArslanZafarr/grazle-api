@@ -144,11 +144,20 @@ export class SearchController {
       const productQuery = productRepository
         .createQueryBuilder("product")
         .leftJoinAndSelect("product.gallery", "gallery")
-        .whereInIds(paginatedIds.items.map((item) => item.id))
-        // .andWhere("product.category_id = :category_id", { category_id: Number(category_id) }) // Ensure category filter is applied again
-        .orderBy("product.created_at", "DESC");
+        .whereInIds(paginatedIds.items.map((item) => item.id));
+      // .orderBy("product.created_at", "DESC")
 
-      const products = await productQuery.getMany();
+      // Apply the category_id filter again to ensure correct results
+      if (category_id) {
+        productQuery.andWhere("product.category_id = :category_id", {
+          category_id: Number(category_id),
+        });
+      }
+
+      // const products = await productQuery.getMany();
+      const products = await productQuery
+        .orderBy("product.created_at", "DESC")
+        .getMany();
 
       const productsWithDetails = await Promise.all(
         products.map(async (product) => {
@@ -306,7 +315,6 @@ export class SearchController {
       let query = productRepository
         .createQueryBuilder("product")
         .leftJoinAndSelect("product.gallery", "gallery");
-        
 
       // Apply category filter if provided
       if (category_id) {
