@@ -145,6 +145,7 @@ export class SearchController {
         .createQueryBuilder("product")
         .leftJoinAndSelect("product.gallery", "gallery")
         .whereInIds(paginatedIds.items.map((item) => item.id))
+        .andWhere("product.category_id = :category_id", { category_id: Number(category_id) }) // Ensure category filter is applied again
         .orderBy("product.created_at", "DESC");
 
       const products = await productQuery.getMany();
