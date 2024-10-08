@@ -337,6 +337,139 @@ export class ProductController {
     }
   }
 
+  // async getProducts(req: Request, res: Response) {
+  //   try {
+  //     const { categoryId, brandId, keywords, page = 1, limit = 10 } = req.query;
+
+  //     const productRepository = appDataSource.getRepository(Product);
+  //     const reviewRepository = appDataSource.getRepository(Review);
+  //     const userRepository = appDataSource.getRepository(User); // Add this line
+
+  //     const queryBuilder = productRepository
+  //       .createQueryBuilder("product")
+  //       .leftJoinAndSelect("product.gallery", "gallery")
+  //       .orderBy("product.created_at", "DESC");
+
+  //     if (categoryId) {
+  //       queryBuilder.andWhere("product.category_id = :categoryId", {
+  //         categoryId: Number(categoryId),
+  //       });
+  //     }
+
+  //     if (brandId) {
+  //       queryBuilder.andWhere("product.brand_id = :brandId", {
+  //         brandId: Number(brandId),
+  //       });
+  //     }
+
+  //     if (keywords) {
+  //       queryBuilder.andWhere(
+  //         "(product.title LIKE :keywords OR product.description LIKE :keywords OR product.tags LIKE :keywords)",
+  //         { keywords: `%${keywords}%` }
+  //       );
+  //     }
+
+  //     const pagination = await paginate<Product>(queryBuilder, {
+  //       page: Number(page),
+  //       limit: Number(limit),
+  //     });
+
+  //     // Fetch user and reviews for each product
+  //     const productsWithDetails = await Promise.all(
+  //       pagination.items.map(async (product) => {
+  //         // Fetch reviews for the product
+  //         const reviews = await reviewRepository.find({
+  //           where: { product_id: product.id },
+  //           order: { created_at: "DESC" },
+  //         });
+
+  //         const totalReviews = reviews.length;
+  //         const averageRating =
+  //           totalReviews > 0
+  //             ? reviews.reduce((sum, review) => sum + review.rating, 0) /
+  //               totalReviews
+  //             : 0;
+
+  //         // Fetch user information
+  //         const user = await userRepository.findOne({
+  //           where: { id: product.user_id },
+  //           // select: ["id", "username", "email", "profile"],
+  //           relations: ["profile", "store_profile"],
+  //         });
+
+  //         // Attach reviews, average rating, total reviews, and user to the product
+  //         const productWithDetails = {
+  //           ...product,
+  //           rating: averageRating.toFixed(1),
+  //           reviews: totalReviews,
+  //           user: user
+  //             ? {
+  //                 id: user.id,
+  //                 username: user.username,
+  //                 email: user.email,
+  //                 profile: {
+  //                   first_name: user.profile.first_name,
+  //                   last_name: user.profile.last_name,
+  //                   image: user.profile.image
+  //                     ? `${BASE_URL}${user.profile.image}`
+  //                     : null,
+  //                   phone: user.profile.phone,
+  //                 },
+  //                 store_profile: {
+  //                   store_name: user?.store_profile?.store_name
+  //                     ? user?.store_profile?.store_name
+  //                     : null,
+  //                   store_image: user.store_profile.store_image
+  //                     ? `${BASE_URL}${user.store_profile.store_image}`
+  //                     : null,
+  //                   store_description: user.store_profile.store_description,
+  //                 },
+  //               }
+  //             : null,
+  //         };
+
+  //         // Attach base URL to featured_image and gallery images
+  //         if (productWithDetails.featured_image) {
+  //           productWithDetails.featured_image = `${BASE_URL}${productWithDetails.featured_image}`;
+  //         }
+
+  //         if (
+  //           productWithDetails.gallery &&
+  //           productWithDetails.gallery.length > 0
+  //         ) {
+  //           productWithDetails.gallery = productWithDetails.gallery.map(
+  //             (galleryItem) => ({
+  //               ...galleryItem,
+  //               image: `${BASE_URL}${galleryItem.image}`,
+  //             })
+  //           );
+  //         }
+
+  //         return productWithDetails;
+  //       })
+  //     );
+
+  //     res.status(200).json({
+  //       products: productsWithDetails,
+  //       total: pagination.meta.totalItems,
+  //       page: pagination.meta.currentPage,
+  //       limit: pagination.meta.itemsPerPage,
+  //       totalPages: pagination.meta.totalPages,
+  //       success: true,
+  //       message: "Products retrieved successfully!",
+  //     });
+  //   } catch (error: any) {
+  //     res.status(500).json({
+  //       success: false,
+  //       message: "Failed to retrieve user's products",
+  //       error: error.message,
+  //     });
+  //   }
+  // }
+
+  // Get Single Product by Slug
+
+
   async getProducts(req: Request, res: Response) {
     try {
       const { categoryId, brandId, keywords, page = 1, limit = 10 } = req.query;
@@ -345,7 +478,8 @@ export class ProductController {
       const reviewRepository = appDataSource.getRepository(Review);
       const userRepository = appDataSource.getRepository(User); // Add this line
 
-      const queryBuilder = productRepository
+      // Step 1: Apply filtering first (before pagination)
+      let queryBuilder = productRepository
         .createQueryBuilder("product")
         .leftJoinAndSelect("product.gallery", "gallery")
         .orderBy("product.created_at", "DESC");
@@ -369,13 +503,13 @@ export class ProductController {
         );
       }
 
-      
+      // Step 2: Apply pagination to the filtered result set
       const pagination = await paginate<Product>(queryBuilder, {
         page: Number(page),
         limit: Number(limit),
       });
 
-      // Fetch user and reviews for each product
+      // Step 3: Fetch user and reviews for each product
       const productsWithDetails = await Promise.all(
         pagination.items.map(async (product) => {
           // Fetch reviews for the product
@@ -394,7 +528,6 @@ export class ProductController {
           // Fetch user information
           const user = await userRepository.findOne({
             where: { id: product.user_id },
-            // select: ["id", "username", "email", "profile"],
             relations: ["profile", "store_profile"],
           });
 
@@ -450,6 +583,7 @@ export class ProductController {
         })
       );
 
+      // Send response
       res.status(200).json({
         products: productsWithDetails,
         total: pagination.meta.totalItems,
@@ -462,13 +596,12 @@ export class ProductController {
     } catch (error: any) {
       res.status(500).json({
         success: false,
-        message: "Failed to retrieve user's products",
+        message: "Failed to retrieve products",
         error: error.message,
       });
     }
   }
 
-  // Get Single Product by Slug
   async getProductBySlug(req: Request, res: Response) {
     try {
       const { slug } = req.params;
