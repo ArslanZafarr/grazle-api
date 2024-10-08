@@ -141,6 +141,11 @@ router.post("/logout", authMiddleware, (req: Request, res: Response) => {
 });
 
 // Start Google OAuth flow
-router.post("/google", parsing, authController.googleLogin);
+router.post(
+  "/google",
+  parsing,
+  [body("token").isEmail().withMessage("The google access token is required")],
+  authController.googleLogin
+);
 
 export default router;

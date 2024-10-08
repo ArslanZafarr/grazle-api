@@ -497,6 +497,83 @@ export class AuthController {
     }
   }
 
+  // async forgotPassword(req: Request, res: Response) {
+  //   try {
+  //     const errors = validationResult(req);
+  //     if (!errors.isEmpty()) {
+  //       const result = errors.mapped();
+
+  //       const formattedErrors: Record<string, string[]> = {};
+  //       for (const key in result) {
+  //         formattedErrors[key.charAt(0).toLowerCase() + key.slice(1)] = [
+  //           result[key].msg,
+  //         ];
+  //       }
+
+  //       const errorCount = Object.keys(result).length;
+  //       const errorSuffix =
+  //         errorCount > 1
+  //           ? ` (and ${errorCount - 1} more error${errorCount > 2 ? "s" : ""})`
+  //           : "";
+
+  //       const errorResponse = {
+  //         success: false,
+  //         message: `${result[Object.keys(result)[0]].msg}${errorSuffix}`,
+  //         errors: formattedErrors,
+  //       };
+
+  //       return res.status(400).json(errorResponse);
+  //     }
+
+  //     const { email } = req.body;
+  //     const userRepository = appDataSource.getRepository(User);
+
+  //     const user = await userRepository.findOne({ where: { email } });
+  //     if (!user) {
+  //       return res.status(400).json({
+  //         success: false,
+  //         message: "Email not found!",
+  //       });
+  //     }
+
+  //     const resetToken = jwt.sign({ userId: user.id }, JWT_SECRET, {
+  //       expiresIn: "1h",
+  //     });
+
+  //     const transporter = nodemailer.createTransport({
+  //       host: "smtp.hostinger.com",
+  //       port: 465,
+  //       auth: {
+  //         user: "info@grazle.co.in",
+  //         pass: "Hemant@12#%$#^5q26",
+  //       },
+  //     });
+
+  //     const resetUrl = `https://grazle.co.in/ResetPassword?token=${resetToken}`;
+
+  //     const mailOptions = {
+  //       from: '"Grazle" <info@grazle.co.in>',
+  //       to: email,
+  //       subject: "Password Reset",
+  //       text: `You requested a password reset. Use the following link to reset your password: ${resetUrl}`,
+  //       html: `<p>You requested a password reset. Use the following link to reset your password: <a href="${resetUrl}">${resetUrl}</a></p>`,
+  //     };
+
+  //     await transporter.sendMail(mailOptions);
+
+  //     res.status(200).json({
+  //       success: true,
+  //       message: "Password reset email sent!",
+  //     });
+  //   } catch (error: any) {
+  //     res.status(500).json({
+  //       success: false,
+  //       message: "Failed to send password reset email",
+  //       error: error.message,
+  //     });
+  //   }
+  // }
+
   async forgotPassword(req: Request, res: Response) {
     try {
       const errors = validationResult(req);
@@ -528,8 +605,10 @@ export class AuthController {
       const { email } = req.body;
       const userRepository = appDataSource.getRepository(User);
 
+      console.log("Looking for user with email:", email);
       const user = await userRepository.findOne({ where: { email } });
       if (!user) {
+        console.log("User not found");
         return res.status(400).json({
           success: false,
           message: "Email not found!",
@@ -543,12 +622,14 @@ export class AuthController {
       const transporter = nodemailer.createTransport({
         host: "smtp.hostinger.com",
         port: 465,
+        secure: true, // true for 465, false for other ports
         auth: {
           user: "info@grazle.co.in",
-          pass: "Hemant@12#%$#^5q26",
+          pass: "Hemant@12#%$#^5q26", // Make sure this is correct
         },
       });
 
+      console.log("Transporter created. Sending email...");
       const resetUrl = `https://grazle.co.in/ResetPassword?token=${resetToken}`;
 
       const mailOptions = {
@@ -560,12 +641,14 @@ export class AuthController {
       };
 
       await transporter.sendMail(mailOptions);
+      console.log("Email sent successfully");
 
       res.status(200).json({
         success: true,
         message: "Password reset email sent!",
       });
     } catch (error: any) {
+      console.error("Error sending password reset email:", error); // Log the error
       res.status(500).json({
         success: false,
         message: "Failed to send password reset email",
@@ -729,17 +812,36 @@ export class AuthController {
   }
 
   async googleLogin(req: Request, res: Response) {
-    const { token } = req.body;
-
-    if (!token) {
-      res.status(400).json({
-        success: false,
-        message: "Google access token is required",
-      });
-      return;
-    }
-
     try {
+      // Validation Error Handling
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        const result = errors.mapped();
+
+        const formattedErrors: Record<string, string[]> = {};
+        for (const key in result) {
+          formattedErrors[key.charAt(0).toLowerCase() + key.slice(1)] = [
+            result[key].msg,
+          ];
+        }
+
+        const errorCount = Object.keys(result).length;
+        const errorSuffix =
+          errorCount > 1
+            ? ` (and ${errorCount - 1} more error${errorCount > 2 ? "s" : ""})`
+            : "";
+
+        const errorResponse = {
+          success: false,
+          message: `${result[Object.keys(result)[0]].msg}${errorSuffix}`,
+          errors: formattedErrors,
+        };
+
+        return res.status(400).json(errorResponse);
+      }
+
+      const { token } = req.body;
+
       // Verify the token with Google
       const ticket = await client.verifyIdToken({
         idToken: token,
