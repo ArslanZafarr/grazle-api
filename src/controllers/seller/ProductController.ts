@@ -352,55 +352,159 @@ export class ProductController {
     }
   }
 
+  // async getProducts(req: Request, res: Response) {
+  //   try {
+  //     const user = (req as any).user;
+
+  //     const { categoryId, brandId, keywords, page = 1, limit = 10 } = req.query;
+  //     const productRepository = appDataSource.getRepository(Product);
+  //     const reviewRepository = appDataSource.getRepository(Review);
+
+  //     const distinctProductIds = productRepository
+  //       .createQueryBuilder("product")
+  //       .select(["product.id", "product.created_at"])
+  //       .where("product.user_id = :userId", { userId: user.id })
+  //       .orderBy("product.created_at", "DESC");
+
+  //     if (categoryId) {
+  //       distinctProductIds.andWhere("product.category_id = :categoryId", {
+  //         categoryId: Number(categoryId),
+  //       });
+  //     }
+
+  //     if (brandId) {
+  //       distinctProductIds.andWhere("product.brand_id = :brandId", {
+  //         brandId: Number(brandId),
+  //       });
+  //     }
+
+  //     if (keywords) {
+  //       distinctProductIds.andWhere(
+  //         "(product.title LIKE :keywords OR product.description LIKE :keywords OR product.tags LIKE :keywords)",
+  //         { keywords: `%${keywords}%` }
+  //       );
+  //     }
+
+  //     // Paginate based on distinct product IDs
+  //     const paginatedIds = await paginate<{ id: number }>(distinctProductIds, {
+  //       page: Number(page),
+  //       limit: Number(limit),
+  //     });
+
+  //     // Fetch full product details for the paginated product IDs
+  //     const queryBuilder = productRepository
+  //       .createQueryBuilder("product")
+  //       .leftJoinAndSelect("product.offer", "offer")
+  //       .leftJoinAndSelect("product.gallery", "gallery")
+  //       .whereInIds(paginatedIds.items.map((item) => item.id))
+  //       .orderBy("product.created_at", "DESC");
+
+  //     const products = await queryBuilder.getMany();
+
+  //     // Fetch reviews for each product
+  //     const productsWithReviews = await Promise.all(
+  //       products.map(async (product) => {
+  //         const reviews = await reviewRepository.find({
+  //           where: { product_id: product.id },
+  //           order: { created_at: "DESC" },
+  //         });
+
+  //         const totalReviews = reviews.length;
+  //         const averageRating =
+  //           totalReviews > 0
+  //             ? reviews.reduce((sum, review) => sum + review.rating, 0) /
+  //               totalReviews
+  //             : 0;
+
+  //         return {
+  //           ...product,
+  //           featured_image: product?.featured_image
+  //             ? `${BASE_URL}${product?.featured_image}`
+  //             : null,
+  //           gallery: product.gallery.map((image) => ({
+  //             ...image,
+  //             image: `${BASE_URL}${image.image}`,
+  //           })),
+  //           rating: averageRating.toFixed(1),
+  //           reviews: totalReviews,
+  //         };
+  //       })
+  //     );
+
+  //     res.status(200).json({
+  //       products: productsWithReviews,
+  //       total: paginatedIds.meta.totalItems,
+  //       page: paginatedIds.meta.currentPage,
+  //       limit: paginatedIds.meta.itemsPerPage,
+  //       totalPages: paginatedIds.meta.totalPages,
+  //       success: true,
+  //       message: "Products retrieved successfully!",
+  //     });
+
+   
+  //   } catch (error: any) {
+  //     res.status(500).json({
+  //       success: false,
+  //       message: "Failed to retrieve products",
+  //       error: error.message,
+  //     });
+  //   }
+  // }
+
+  // Get Single Product by Slug
+  
+  
+
   async getProducts(req: Request, res: Response) {
     try {
       const user = (req as any).user;
-
       const { categoryId, brandId, keywords, page = 1, limit = 10 } = req.query;
+  
       const productRepository = appDataSource.getRepository(Product);
       const reviewRepository = appDataSource.getRepository(Review);
-
-      const distinctProductIds = productRepository
+  
+      // Filter by seller and optional filters (categoryId, brandId, keywords)
+      let queryBuilder = productRepository
         .createQueryBuilder("product")
-        .select(["product.id", "product.created_at"])
-        .where("product.user_id = :userId", { userId: user.id })
-        .orderBy("product.created_at", "DESC");
-
+        .where("product.user_id = :userId", { userId: user.id });
+  
       if (categoryId) {
-        distinctProductIds.andWhere("product.category_id = :categoryId", {
+        queryBuilder = queryBuilder.andWhere("product.category_id = :categoryId", {
           categoryId: Number(categoryId),
         });
       }
-
+  
       if (brandId) {
-        distinctProductIds.andWhere("product.brand_id = :brandId", {
+        queryBuilder = queryBuilder.andWhere("product.brand_id = :brandId", {
           brandId: Number(brandId),
         });
       }
-
+  
       if (keywords) {
-        distinctProductIds.andWhere(
+        queryBuilder = queryBuilder.andWhere(
           "(product.title LIKE :keywords OR product.description LIKE :keywords OR product.tags LIKE :keywords)",
           { keywords: `%${keywords}%` }
         );
       }
-
-      // Paginate based on distinct product IDs
-      const paginatedIds = await paginate<{ id: number }>(distinctProductIds, {
+  
+      // Apply sorting by created_at
+      queryBuilder = queryBuilder.orderBy("product.created_at", "DESC");
+  
+      // Paginate based on the filtered products
+      const paginatedIds = await paginate<{ id: number }>(queryBuilder, {
         page: Number(page),
         limit: Number(limit),
       });
-
+  
       // Fetch full product details for the paginated product IDs
-      const queryBuilder = productRepository
+      const products = await productRepository
         .createQueryBuilder("product")
         .leftJoinAndSelect("product.offer", "offer")
         .leftJoinAndSelect("product.gallery", "gallery")
         .whereInIds(paginatedIds.items.map((item) => item.id))
-        .orderBy("product.created_at", "DESC");
-
-      const products = await queryBuilder.getMany();
-
+        .orderBy("product.created_at", "DESC")
+        .getMany();
+  
       // Fetch reviews for each product
       const productsWithReviews = await Promise.all(
         products.map(async (product) => {
@@ -408,14 +512,13 @@ export class ProductController {
             where: { product_id: product.id },
             order: { created_at: "DESC" },
           });
-
+  
           const totalReviews = reviews.length;
           const averageRating =
             totalReviews > 0
-              ? reviews.reduce((sum, review) => sum + review.rating, 0) /
-                totalReviews
+              ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
               : 0;
-
+  
           return {
             ...product,
             featured_image: product?.featured_image
@@ -430,7 +533,8 @@ export class ProductController {
           };
         })
       );
-
+  
+      // Send response with paginated products
       res.status(200).json({
         products: productsWithReviews,
         total: paginatedIds.meta.totalItems,
@@ -440,16 +544,6 @@ export class ProductController {
         success: true,
         message: "Products retrieved successfully!",
       });
-
-      // res.status(200).json({
-      //   products: productsWithReviews,
-      //   total: pagination.meta.totalItems,
-      //   page: pagination.meta.currentPage,
-      //   limit: pagination.meta.itemsPerPage,
-      //   totalPages: pagination.meta.totalPages,
-      //   success: true,
-      //   message: "Products retrieved successfully!",
-      // });
     } catch (error: any) {
       res.status(500).json({
         success: false,
@@ -458,8 +552,9 @@ export class ProductController {
       });
     }
   }
+  
 
-  // Get Single Product by Slug
+
   async getProductBySlug(req: Request, res: Response) {
     try {
       const { slug } = req.params;
