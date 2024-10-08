@@ -356,7 +356,7 @@ export class ProductController {
     try {
       const user = (req as any).user;
 
-      const { categoryId, brandId, page = 1, limit = 10 } = req.query;
+      const { categoryId, brandId, keywords, page = 1, limit = 10 } = req.query;
       const productRepository = appDataSource.getRepository(Product);
       const reviewRepository = appDataSource.getRepository(Review);
 
@@ -376,6 +376,13 @@ export class ProductController {
         distinctProductIds.andWhere("product.brand_id = :brandId", {
           brandId: Number(brandId),
         });
+      }
+
+      if (keywords) {
+        distinctProductIds.andWhere(
+          "(product.title LIKE :keywords OR product.description LIKE :keywords OR product.tags LIKE :keywords)",
+          { keywords: `%${keywords}%` }
+        );
       }
 
       // Paginate based on distinct product IDs

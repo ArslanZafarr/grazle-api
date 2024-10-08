@@ -339,7 +339,7 @@ export class ProductController {
 
   async getProducts(req: Request, res: Response) {
     try {
-      const { categoryId, brandId, page = 1, limit = 10 } = req.query;
+      const { categoryId, brandId, keywords, page = 1, limit = 10 } = req.query;
 
       const productRepository = appDataSource.getRepository(Product);
       const reviewRepository = appDataSource.getRepository(Review);
@@ -362,6 +362,14 @@ export class ProductController {
         });
       }
 
+      if (keywords) {
+        queryBuilder.andWhere(
+          "(product.title LIKE :keywords OR product.description LIKE :keywords OR product.tags LIKE :keywords)",
+          { keywords: `%${keywords}%` }
+        );
+      }
+
+      
       const pagination = await paginate<Product>(queryBuilder, {
         page: Number(page),
         limit: Number(limit),
