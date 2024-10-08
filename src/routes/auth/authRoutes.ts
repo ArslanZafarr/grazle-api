@@ -144,7 +144,7 @@ router.post("/logout", authMiddleware, (req: Request, res: Response) => {
 router.post(
   "/google",
   parsing,
-  [body("token").isEmail().withMessage("The google access token is required")],
+  [body("token").notEmpty().withMessage("The google access token is required")],
   authController.googleLogin
 );
 
