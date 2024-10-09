@@ -625,7 +625,7 @@ export class AuthController {
         secure: true, // true for 465, false for other ports
         auth: {
           user: "info@grazle.co.in",
-          pass: "Hemant@12#%$#^5q26", // Make sure this is correct
+          pass: "Hardlabs@365@365", 
         },
       });
 
