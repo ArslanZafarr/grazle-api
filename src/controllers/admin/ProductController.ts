@@ -173,6 +173,9 @@ export class ProductController {
         discount,
         description,
         tags,
+        product_warranty,
+        stock_quantity,
+        low_stock_threshold,
         color,
         product_info,
         questions,
@@ -229,6 +232,9 @@ export class ProductController {
       product.description = description;
       product.color = color;
       product.tags = tags;
+      product.product_warranty = product_warranty;
+      product.stock_quantity = stock_quantity;
+      product.low_stock_threshold = low_stock_threshold;
       product.product_info = product_info;
 
       if (discount && !isNaN(parseFloat(discount))) {
@@ -336,139 +342,6 @@ export class ProductController {
       });
     }
   }
-
-  // async getProducts(req: Request, res: Response) {
-  //   try {
-  //     const { categoryId, brandId, keywords, page = 1, limit = 10 } = req.query;
-
-  //     const productRepository = appDataSource.getRepository(Product);
-  //     const reviewRepository = appDataSource.getRepository(Review);
-  //     const userRepository = appDataSource.getRepository(User); // Add this line
-
-  //     const queryBuilder = productRepository
-  //       .createQueryBuilder("product")
-  //       .leftJoinAndSelect("product.gallery", "gallery")
-  //       .orderBy("product.created_at", "DESC");
-
-  //     if (categoryId) {
-  //       queryBuilder.andWhere("product.category_id = :categoryId", {
-  //         categoryId: Number(categoryId),
-  //       });
-  //     }
-
-  //     if (brandId) {
-  //       queryBuilder.andWhere("product.brand_id = :brandId", {
-  //         brandId: Number(brandId),
-  //       });
-  //     }
-
-  //     if (keywords) {
-  //       queryBuilder.andWhere(
-  //         "(product.title LIKE :keywords OR product.description LIKE :keywords OR product.tags LIKE :keywords)",
-  //         { keywords: `%${keywords}%` }
-  //       );
-  //     }
-
-  //     const pagination = await paginate<Product>(queryBuilder, {
-  //       page: Number(page),
-  //       limit: Number(limit),
-  //     });
-
-  //     // Fetch user and reviews for each product
-  //     const productsWithDetails = await Promise.all(
-  //       pagination.items.map(async (product) => {
-  //         // Fetch reviews for the product
-  //         const reviews = await reviewRepository.find({
-  //           where: { product_id: product.id },
-  //           order: { created_at: "DESC" },
-  //         });
-
-  //         const totalReviews = reviews.length;
-  //         const averageRating =
-  //           totalReviews > 0
-  //             ? reviews.reduce((sum, review) => sum + review.rating, 0) /
-  //               totalReviews
-  //             : 0;
-
-  //         // Fetch user information
-  //         const user = await userRepository.findOne({
-  //           where: { id: product.user_id },
-  //           // select: ["id", "username", "email", "profile"],
-  //           relations: ["profile", "store_profile"],
-  //         });
-
-  //         // Attach reviews, average rating, total reviews, and user to the product
-  //         const productWithDetails = {
-  //           ...product,
-  //           rating: averageRating.toFixed(1),
-  //           reviews: totalReviews,
-  //           user: user
-  //             ? {
-  //                 id: user.id,
-  //                 username: user.username,
-  //                 email: user.email,
-  //                 profile: {
-  //                   first_name: user.profile.first_name,
-  //                   last_name: user.profile.last_name,
-  //                   image: user.profile.image
-  //                     ? `${BASE_URL}${user.profile.image}`
-  //                     : null,
-  //                   phone: user.profile.phone,
-  //                 },
-  //                 store_profile: {
-  //                   store_name: user?.store_profile?.store_name
-  //                     ? user?.store_profile?.store_name
-  //                     : null,
-  //                   store_image: user.store_profile.store_image
-  //                     ? `${BASE_URL}${user.store_profile.store_image}`
-  //                     : null,
-  //                   store_description: user.store_profile.store_description,
-  //                 },
-  //               }
-  //             : null,
-  //         };
-
-  //         // Attach base URL to featured_image and gallery images
-  //         if (productWithDetails.featured_image) {
-  //           productWithDetails.featured_image = `${BASE_URL}${productWithDetails.featured_image}`;
-  //         }
-
-  //         if (
-  //           productWithDetails.gallery &&
-  //           productWithDetails.gallery.length > 0
-  //         ) {
-  //           productWithDetails.gallery = productWithDetails.gallery.map(
-  //             (galleryItem) => ({
-  //               ...galleryItem,
-  //               image: `${BASE_URL}${galleryItem.image}`,
-  //             })
-  //           );
-  //         }
-
-  //         return productWithDetails;
-  //       })
-  //     );
-
-  //     res.status(200).json({
-  //       products: productsWithDetails,
-  //       total: pagination.meta.totalItems,
-  //       page: pagination.meta.currentPage,
-  //       limit: pagination.meta.itemsPerPage,
-  //       totalPages: pagination.meta.totalPages,
-  //       success: true,
-  //       message: "Products retrieved successfully!",
-  //     });
-  //   } catch (error: any) {
-  //     res.status(500).json({
-  //       success: false,
-  //       message: "Failed to retrieve user's products",
-  //       error: error.message,
-  //     });
-  //   }
-  // }
-
-  // Get Single Product by Slug
-
 
   async getProducts(req: Request, res: Response) {
     try {
@@ -818,6 +691,9 @@ export class ProductController {
         description,
         tags,
         color,
+        product_warranty,
+        stock_quantity,
+        low_stock_threshold,
         product_info,
         questions,
         answers,
@@ -851,6 +727,10 @@ export class ProductController {
       product.description = description || product.description;
       product.tags = tags || product.tags;
       product.color = color || product.color;
+      product.product_warranty = product_warranty || product.product_warranty;
+      product.stock_quantity = stock_quantity || product.stock_quantity;
+      product.low_stock_threshold =
+        low_stock_threshold || product.low_stock_threshold;
       product.product_info = product_info || product.product_info;
 
       if (discount && !isNaN(parseFloat(discount))) {
@@ -1000,6 +880,53 @@ export class ProductController {
       res.status(500).json({
         success: false,
         message: "Failed to update product",
+        error: error.message,
+      });
+    }
+  }
+
+  async updateStockQuantity(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      // const productId = parseInt(req.params.id); // Get the product id from the URL params
+      const { stock_quantity } = req.body; // Get the new stock quantity from the request body
+
+      if (typeof stock_quantity !== "number" || stock_quantity < 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid stock quantity. It must be a non-negative number.",
+        });
+      }
+
+      const productRepository = appDataSource.getRepository(Product);
+
+      // Find the product by id
+      const product = await productRepository.findOne({
+        where: { id: parseInt(id) },
+      });
+
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: "Product not found",
+        });
+      }
+
+      // Update the stock quantity of the product
+      product.stock_quantity = stock_quantity;
+
+      // Save the updated product back to the database
+      await productRepository.save(product);
+
+      return res.status(200).json({
+        success: true,
+        message: "Product stock quantity updated successfully",
+        data: product,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to update product stock quantity",
         error: error.message,
       });
     }

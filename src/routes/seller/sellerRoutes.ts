@@ -173,6 +173,9 @@ router.put(
   productController.updateProduct
 );
 
+// Route for updating product stock quantity
+router.put("/vendor/products/stock/:id", productController.updateStockQuantity);
+
 router.put(
   "/vendor/product-festival/:id",
   sellerMiddleware,

@@ -71,6 +71,9 @@ router.put(
   productController.updateProduct
 );
 
+// Route for updating product stock quantity
+router.put("/admin/products/stock/:id", productController.updateStockQuantity);
+
 router.put(
   "/admin/product-sponsored/:id",
   adminMiddleware,
@@ -93,7 +96,6 @@ router.delete(
   adminMiddleware,
   productController.deleteProductImage
 );
-
 
 router.delete(
   "/admin/products-faq/:productId/faqs/:faqId",

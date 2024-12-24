@@ -188,6 +188,9 @@ export class ProductController {
         discount,
         description,
         tags,
+        product_warranty,
+        stock_quantity,
+        low_stock_threshold,
         color,
         product_info,
         questions,
@@ -244,6 +247,9 @@ export class ProductController {
       product.description = description;
       product.color = color;
       product.tags = tags;
+      product.product_warranty = product_warranty;
+      product.stock_quantity = stock_quantity;
+      product.low_stock_threshold = low_stock_threshold;
       product.product_info = product_info;
 
       if (discount && !isNaN(parseFloat(discount))) {
@@ -352,150 +358,50 @@ export class ProductController {
     }
   }
 
-  // async getProducts(req: Request, res: Response) {
-  //   try {
-  //     const user = (req as any).user;
-
-  //     const { categoryId, brandId, keywords, page = 1, limit = 10 } = req.query;
-  //     const productRepository = appDataSource.getRepository(Product);
-  //     const reviewRepository = appDataSource.getRepository(Review);
-
-  //     const distinctProductIds = productRepository
-  //       .createQueryBuilder("product")
-  //       .select(["product.id", "product.created_at"])
-  //       .where("product.user_id = :userId", { userId: user.id })
-  //       .orderBy("product.created_at", "DESC");
-
-  //     if (categoryId) {
-  //       distinctProductIds.andWhere("product.category_id = :categoryId", {
-  //         categoryId: Number(categoryId),
-  //       });
-  //     }
-
-  //     if (brandId) {
-  //       distinctProductIds.andWhere("product.brand_id = :brandId", {
-  //         brandId: Number(brandId),
-  //       });
-  //     }
-
-  //     if (keywords) {
-  //       distinctProductIds.andWhere(
-  //         "(product.title LIKE :keywords OR product.description LIKE :keywords OR product.tags LIKE :keywords)",
-  //         { keywords: `%${keywords}%` }
-  //       );
-  //     }
-
-  //     // Paginate based on distinct product IDs
-  //     const paginatedIds = await paginate<{ id: number }>(distinctProductIds, {
-  //       page: Number(page),
-  //       limit: Number(limit),
-  //     });
-
-  //     // Fetch full product details for the paginated product IDs
-  //     const queryBuilder = productRepository
-  //       .createQueryBuilder("product")
-  //       .leftJoinAndSelect("product.offer", "offer")
-  //       .leftJoinAndSelect("product.gallery", "gallery")
-  //       .whereInIds(paginatedIds.items.map((item) => item.id))
-  //       .orderBy("product.created_at", "DESC");
-
-  //     const products = await queryBuilder.getMany();
-
-  //     // Fetch reviews for each product
-  //     const productsWithReviews = await Promise.all(
-  //       products.map(async (product) => {
-  //         const reviews = await reviewRepository.find({
-  //           where: { product_id: product.id },
-  //           order: { created_at: "DESC" },
-  //         });
-
-  //         const totalReviews = reviews.length;
-  //         const averageRating =
-  //           totalReviews > 0
-  //             ? reviews.reduce((sum, review) => sum + review.rating, 0) /
-  //               totalReviews
-  //             : 0;
-
-  //         return {
-  //           ...product,
-  //           featured_image: product?.featured_image
-  //             ? `${BASE_URL}${product?.featured_image}`
-  //             : null,
-  //           gallery: product.gallery.map((image) => ({
-  //             ...image,
-  //             image: `${BASE_URL}${image.image}`,
-  //           })),
-  //           rating: averageRating.toFixed(1),
-  //           reviews: totalReviews,
-  //         };
-  //       })
-  //     );
-
-  //     res.status(200).json({
-  //       products: productsWithReviews,
-  //       total: paginatedIds.meta.totalItems,
-  //       page: paginatedIds.meta.currentPage,
-  //       limit: paginatedIds.meta.itemsPerPage,
-  //       totalPages: paginatedIds.meta.totalPages,
-  //       success: true,
-  //       message: "Products retrieved successfully!",
-  //     });
-
-   
-  //   } catch (error: any) {
-  //     res.status(500).json({
-  //       success: false,
-  //       message: "Failed to retrieve products",
-  //       error: error.message,
-  //     });
-  //   }
-  // }
-
-  // Get Single Product by Slug
-  
-  
-
   async getProducts(req: Request, res: Response) {
     try {
       const user = (req as any).user;
       const { categoryId, brandId, keywords, page = 1, limit = 10 } = req.query;
-  
+
       const productRepository = appDataSource.getRepository(Product);
       const reviewRepository = appDataSource.getRepository(Review);
-  
+
       // Filter by seller and optional filters (categoryId, brandId, keywords)
       let queryBuilder = productRepository
         .createQueryBuilder("product")
         .where("product.user_id = :userId", { userId: user.id });
-  
+
       if (categoryId) {
-        queryBuilder = queryBuilder.andWhere("product.category_id = :categoryId", {
-          categoryId: Number(categoryId),
-        });
+        queryBuilder = queryBuilder.andWhere(
+          "product.category_id = :categoryId",
+          {
+            categoryId: Number(categoryId),
+          }
+        );
       }
-  
+
       if (brandId) {
         queryBuilder = queryBuilder.andWhere("product.brand_id = :brandId", {
           brandId: Number(brandId),
         });
       }
-  
+
       if (keywords) {
         queryBuilder = queryBuilder.andWhere(
           "(product.title LIKE :keywords OR product.description LIKE :keywords OR product.tags LIKE :keywords)",
           { keywords: `%${keywords}%` }
         );
       }
-  
+
       // Apply sorting by created_at
       queryBuilder = queryBuilder.orderBy("product.created_at", "DESC");
-  
+
       // Paginate based on the filtered products
       const paginatedIds = await paginate<{ id: number }>(queryBuilder, {
         page: Number(page),
         limit: Number(limit),
       });
-  
+
       // Fetch full product details for the paginated product IDs
       const products = await productRepository
         .createQueryBuilder("product")
@@ -504,7 +410,7 @@ export class ProductController {
         .whereInIds(paginatedIds.items.map((item) => item.id))
         .orderBy("product.created_at", "DESC")
         .getMany();
-  
+
       // Fetch reviews for each product
       const productsWithReviews = await Promise.all(
         products.map(async (product) => {
@@ -512,13 +418,14 @@ export class ProductController {
             where: { product_id: product.id },
             order: { created_at: "DESC" },
           });
-  
+
           const totalReviews = reviews.length;
           const averageRating =
             totalReviews > 0
-              ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
+              ? reviews.reduce((sum, review) => sum + review.rating, 0) /
+                totalReviews
               : 0;
-  
+
           return {
             ...product,
             featured_image: product?.featured_image
@@ -533,7 +440,7 @@ export class ProductController {
           };
         })
       );
-  
+
       // Send response with paginated products
       res.status(200).json({
         products: productsWithReviews,
@@ -552,8 +459,6 @@ export class ProductController {
       });
     }
   }
-  
-
 
   async getProductBySlug(req: Request, res: Response) {
     try {
@@ -611,6 +516,9 @@ export class ProductController {
         description,
         tags,
         color,
+        product_warranty,
+        stock_quantity,
+        low_stock_threshold,
         product_info,
         questions,
         answers,
@@ -644,6 +552,10 @@ export class ProductController {
       product.description = description || product.description;
       product.tags = tags || product.tags;
       product.color = color || product.color;
+      product.product_warranty = product_warranty || product.product_warranty;
+      product.stock_quantity = stock_quantity || product.stock_quantity;
+      product.low_stock_threshold =
+        low_stock_threshold || product.low_stock_threshold;
       product.product_info = product_info || product.product_info;
 
       if (discount && !isNaN(parseFloat(discount))) {
@@ -793,6 +705,53 @@ export class ProductController {
       res.status(500).json({
         success: false,
         message: "Failed to update product",
+        error: error.message,
+      });
+    }
+  }
+
+  async updateStockQuantity(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      // const productId = parseInt(req.params.id); // Get the product id from the URL params
+      const { stock_quantity } = req.body; // Get the new stock quantity from the request body
+
+      if (typeof stock_quantity !== "number" || stock_quantity < 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid stock quantity. It must be a non-negative number.",
+        });
+      }
+
+      const productRepository = appDataSource.getRepository(Product);
+
+      // Find the product by id
+      const product = await productRepository.findOne({
+        where: { id: parseInt(id) },
+      });
+
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: "Product not found",
+        });
+      }
+
+      // Update the stock quantity of the product
+      product.stock_quantity = stock_quantity;
+
+      // Save the updated product back to the database
+      await productRepository.save(product);
+
+      return res.status(200).json({
+        success: true,
+        message: "Product stock quantity updated successfully",
+        data: product,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to update product stock quantity",
         error: error.message,
       });
     }

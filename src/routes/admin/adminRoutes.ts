@@ -194,6 +194,13 @@ router.delete(
   userController.delete.bind(userController)
 );
 
+// Route for toggling trusted status (update)
+router.put(
+  "/seller/trusted/:id",
+  adminMiddleware,
+  userController.toggleSellerTrustedStatus
+);
+
 // Order Routes
 
 const orderController = new AdminOrderController();

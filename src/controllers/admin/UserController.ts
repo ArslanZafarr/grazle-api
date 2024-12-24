@@ -14,9 +14,7 @@ import { sendStoreProfileStatusEmail } from "../../services/emailService";
 import { Order } from "../../entities/Order";
 import { OrderProduct } from "../../entities/OrderProduct";
 
-const BASE_URL =
-  process.env.IMAGE_PATH ||
-  "https://api.grazle.co.in/";
+const BASE_URL = process.env.IMAGE_PATH || "https://api.grazle.co.in/";
 
 interface MulterRequest extends Request {
   file?: {
@@ -155,182 +153,6 @@ export class UserController {
       });
     }
   }
-
-  // async getSellerDetailWithProductsById(req: Request, res: Response) {
-  //   try {
-  //     const { id } = req.params;
-
-  //     // Fetch the user details including the profile and store_profile
-  //     const userRepository = appDataSource.getRepository(User);
-  //     const user = await userRepository.findOne({
-  //       where: { id: parseInt(id) },
-  //       relations: ["profile", "store_profile"],
-  //     });
-
-  //     if (!user) {
-  //       return res.status(404).json({
-  //         error: "User not found",
-  //         success: false,
-  //         message: "User not found with the provided ID",
-  //       });
-  //     }
-
-  //     // Fetch products associated with the user, including gallery images
-  //     const productRepository = appDataSource.getRepository(Product);
-  //     let products = await productRepository.find({
-  //       where: { user_id: parseInt(id) },
-  //       relations: ["gallery"],
-  //     });
-
-  //     // Fetch all categories
-  //     const categoryRepository = appDataSource.getRepository(Category);
-  //     const allCategories = await categoryRepository.find();
-
-  //     // Fetch total orders for the seller
-  //     const orderProductRepository = appDataSource.getRepository(OrderProduct);
-  //     const totalOrders = await orderProductRepository
-  //       .createQueryBuilder("orderProduct")
-  //       .leftJoin("orderProduct.product", "product")
-  //       .where("product.user_id = :userId", { userId: parseInt(id) })
-  //       .getCount();
-
-  //     // Fetch total completed orders for the seller
-  //     const totalCompletedOrders = await orderProductRepository
-  //       .createQueryBuilder("orderProduct")
-  //       .leftJoin("orderProduct.order", "order")
-  //       .leftJoin("orderProduct.product", "product")
-  //       .leftJoin("order.status_history", "statusHistory")
-  //       .where("product.user_id = :userId", { userId: parseInt(id) })
-  //       .andWhere("statusHistory.status = :status", { status: "completed" })
-  //       .getCount();
-
-  //     // Fetch total cancelled orders for the seller
-  //     const totalCancelledOrders = await orderProductRepository
-  //       .createQueryBuilder("orderProduct")
-  //       .leftJoin("orderProduct.order", "order")
-  //       .leftJoin("orderProduct.product", "product")
-  //       .leftJoin("order.status_history", "statusHistory")
-  //       .where("product.user_id = :userId", { userId: parseInt(id) })
-  //       .andWhere("statusHistory.status = :status", { status: "cancelled" })
-  //       .getCount();
-
-  //     // Fetch total sales for the seller
-  //     const completedOrderProducts = await orderProductRepository
-  //       .createQueryBuilder("orderProduct")
-  //       .leftJoinAndSelect("orderProduct.order", "order")
-  //       .leftJoin("orderProduct.product", "product")
-  //       .leftJoin("order.status_history", "statusHistory")
-  //       .where("product.user_id = :userId", { userId: parseInt(id) })
-  //       .andWhere("statusHistory.status = :status", { status: "completed" })
-  //       .getMany();
-
-  //     const totalSales = completedOrderProducts.reduce(
-  //       (sum, orderProduct) => sum + orderProduct.price * orderProduct.quantity,
-  //       0
-  //     );
-
-  //     // Calculate cancellation rate
-  //     const totalCompletedAndCancelledOrders =
-  //       totalCompletedOrders + totalCancelledOrders;
-  //     const cancellationRate =
-  //       totalCompletedAndCancelledOrders > 0
-  //         ? (totalCancelledOrders / totalCompletedAndCancelledOrders) * 100
-  //         : 0;
-
-  //     // Modify user profile image URL
-  //     if (user.profile && user.profile.image) {
-  //       user.profile.image = `${BASE_URL}${user.profile.image}`;
-  //     }
-
-  //     // Attach store_profile if it exists
-  //     const storeProfile = user.store_profile
-  //       ? {
-  //           id: user.id,
-  //           store_name: user.store_profile.store_name,
-  //           store_image: user.store_profile.store_image
-  //             ? `${BASE_URL}${user.store_profile.store_image}`
-  //             : null,
-  //           store_description: user.store_profile.store_description,
-  //           account_name: user.store_profile.account_name,
-  //           account_number: user.store_profile.account_number,
-  //           bank_name: user.store_profile.bank_name,
-  //           bank_code: user.store_profile.bank_code,
-  //           business_license: user.store_profile.business_license
-  //             ? `${BASE_URL}${user.store_profile.business_license}`
-  //             : null,
-  //           tax_id: user.store_profile.tax_id
-  //             ? `${BASE_URL}${user.store_profile.tax_id}`
-  //             : null,
-  //           proof_of_address: user.store_profile.proof_of_address
-  //             ? `${BASE_URL}${user.store_profile.proof_of_address}`
-  //             : null,
-  //           active: user.store_profile.active,
-  //           created_at: user.store_profile.created_at,
-  //           updated_at: user.store_profile.updated_at,
-  //         }
-  //       : null;
-
-  //     // Map gallery images to products and attach baseProductImageUrl
-  //     products = products.map((product) => {
-  //       product.gallery = product.gallery.map((image) => ({
-  //         ...image,
-  //         image: `${BASE_URL}${image.image}`,
-  //       }));
-
-  //       // Attach base URL to featured_image if it exists
-  //       if (product.featured_image) {
-  //         product.featured_image = `${BASE_URL}${product.featured_image}`;
-  //       }
-
-  //       // Find category details and attach baseCategoryImageUrl
-  //       const category = allCategories.find(
-  //         (cat) => cat.id === product.category_id
-  //       );
-
-  //       return {
-  //         ...product,
-  //         category: category
-  //           ? {
-  //               id: category?.id,
-  //               name: category?.name,
-  //               slug: category?.slug,
-  //               image: category?.image ? `${BASE_URL}${category?.image}` : null,
-  //               description: category?.description,
-  //               active: category?.active,
-  //               created_at: category?.created_at,
-  //               updated_at: category?.updated_at,
-  //             }
-  //           : null,
-  //       };
-  //     });
-
-  //     // Omit sensitive fields from user if needed
-  //     const userWithoutSensitiveFields = omitSensitiveFields(user);
-
-  //     res.status(200).json({
-  //       user: {
-  //         ...userWithoutSensitiveFields,
-  //         store_profile: storeProfile,
-  //       },
-  //       products: products,
-  //       analytics: {
-  //         total_orders: totalOrders,
-  //         // total_completed_orders: totalCompletedOrders,
-  //         // total_cancelled_orders: totalCancelledOrders,
-  //         total_sales: totalSales,
-  //         return_rate: `${cancellationRate}%`,
-  //       },
-  //       success: true,
-  //       message: "Seller details with products fetched successfully",
-  //     });
-  //   } catch (error: any) {
-  //     res.status(500).json({
-  //       success: false,
-  //       message: "Failed to fetch seller with products",
-  //       error: error.message,
-  //     });
-  //   }
-  // }
 
   async getSellerDetailWithProductsById(req: Request, res: Response) {
     try {
@@ -842,6 +664,52 @@ export class UserController {
       res.status(500).json({
         success: false,
         message: "Failed to toggle seller's store profile active/inactive",
+      });
+    }
+  }
+
+  async toggleSellerTrustedStatus(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const userRepository = appDataSource.getRepository(User);
+      const storeProfileRepository = appDataSource.getRepository(StoreProfile);
+
+      // Fetch the user and related store profile
+      const user = await userRepository.findOne({
+        where: { id: parseInt(id) },
+        relations: ["store_profile"],
+      });
+
+      // Check if the user and store profile exist
+      if (!user || !user.store_profile) {
+        return res.status(404).json({
+          success: false,
+          message: "User or store profile not found",
+        });
+      }
+
+      // Toggle the trusted status
+      user.store_profile.trusted = !user.store_profile.trusted;
+
+      // Save the updated store profile
+      const updatedStoreProfile = await storeProfileRepository.save(
+        user.store_profile
+      );
+
+      // Send email notification (optional)
+      // You can send a custom email based on trusted status if needed.
+
+      res.status(200).json({
+        success: true,
+        message: `Seller's trusted status ${
+          updatedStoreProfile.trusted ? "enabled" : "disabled"
+        } successfully`,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to toggle seller's trusted status",
+        error: error.message,
       });
     }
   }
