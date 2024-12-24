@@ -60,6 +60,16 @@ export class Product {
   @Column({ type: "longtext", nullable: true })
   tags: string;
 
+  @Column({ type: "varchar", length: 255, nullable: true })
+  product_warranty: string;
+
+  // New Inventory Management Fields
+  @Column({ type: "int", default: 0 })
+  stock_quantity: number;
+
+  @Column({ type: "int", nullable: true })
+  low_stock_threshold: number;
+
   @Column({ default: 1 })
   active: number;
 

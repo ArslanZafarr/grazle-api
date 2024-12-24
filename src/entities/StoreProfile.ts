@@ -68,6 +68,9 @@ export class StoreProfile {
   @Column({ type: "boolean", default: false })
   active: boolean;
 
+  @Column({ type: "boolean", default: false })
+  trusted: boolean;
+
   @CreateDateColumn({ type: "timestamp" })
   created_at: Date;
 

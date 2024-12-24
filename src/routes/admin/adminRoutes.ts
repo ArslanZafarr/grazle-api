@@ -18,6 +18,7 @@ import { MembershipPlanController } from "../../controllers/admin/MembershipPlan
 import { StateController } from "../../controllers/admin/StateController";
 import { CityController } from "../../controllers/admin/CityController";
 import { sendAdminNotification } from "../../controllers/admin/PushNotificationController";
+import { AdminSponsorController } from "../../controllers/admin/AdminSponsorController";
 
 const router = express.Router();
 const multer = require("multer");
@@ -558,5 +559,43 @@ router.post(
   ],
   sendAdminNotification
 );
+
+// sponsorship routes
+
+const sponsorImageDir = path.join(__dirname, "../../../bucket/sponsor");
+if (!fs.existsSync(sponsorImageDir)) {
+  fs.mkdirSync(sponsorImageDir, { recursive: true });
+  console.log("Sponsor image directory created");
+}
+
+const sponsorUpload = multer({
+  storage: multer.diskStorage({
+    destination: function (req: any, file: any, cb: any) {
+      cb(null, "bucket/sponsor");
+    },
+    filename: function (req: any, file: any, cb: any) {
+      cb(null, file.fieldname + "-" + Date.now() + ".jpg");
+    },
+  }),
+}).single("url");
+
+const sponsorController = new AdminSponsorController();
+
+router.get("/admin/sponsors", sponsorController.getAllSponsors);
+router.get("/admin/sponsors/:id", sponsorController.getSponsorById);
+router.post(
+  "/admin/sponsors",
+  adminMiddleware,
+  sponsorUpload,
+  [
+    body("sponsor_link")
+      .notEmpty()
+      .withMessage("The sponsor_link field is required"),
+    body("type").notEmpty().withMessage("The type field is required"),
+  ],
+  sponsorController.createSponsor
+);
+router.put("/admin/sponsors/:id", sponsorController.updateSponsor);
+router.delete("/admin/sponsors/:id", sponsorController.deleteSponsor);
 
 export default router;
