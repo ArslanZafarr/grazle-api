@@ -588,6 +588,7 @@ export class UserController {
               store_image: user.store_profile.store_image
                 ? `${BASE_URL}${user.store_profile.store_image}`
                 : null,
+              trusted: user.store_profile.trusted,
               store_description: user.store_profile.store_description,
               account_name: user.store_profile.account_name,
               account_number: user.store_profile.account_number,
