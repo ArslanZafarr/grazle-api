@@ -33,7 +33,7 @@ export class CustomerSupportPublic {
         return res.status(400).json(errorResponse);
       }
 
-      const { name, email, message } = req.body;
+      const { name, email, subject, message } = req.body;
 
       const customerSupportRepo = appDataSource.getRepository(
         CustomerSupportMessage
@@ -43,6 +43,7 @@ export class CustomerSupportPublic {
 
       newCustomerSupportMessage.name = name;
       newCustomerSupportMessage.email = email;
+      newCustomerSupportMessage.subject = subject;
       newCustomerSupportMessage.message = message;
 
       const createCustomerSupportMessage = await customerSupportRepo.save(
