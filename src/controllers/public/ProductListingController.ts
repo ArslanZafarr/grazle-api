@@ -72,7 +72,7 @@ interface ProductWithExtras extends Omit<Product, "reviews"> {
   featured_image: string;
   // rating: string;
   // reviewCount: number;
-  gallery: Array<ProductsGallery & { image_url: string }>;
+  gallery: Array<ProductsGallery & { image: string }>;
 }
 
 const BASE_URL = process.env.IMAGE_PATH || "https://api.grazle.co.in/";
@@ -1247,7 +1247,7 @@ export class ProductListingController {
               : product.featured_image,
             gallery: product.gallery.map((image) => ({
               ...image,
-              image_url: `${BASE_URL}${image.image}`,
+              image: `${BASE_URL}${image.image}`,
             })),
             rating: averageRating.toFixed(1),
             reviewCount: totalReviews,
@@ -1341,7 +1341,7 @@ export class ProductListingController {
               : product.featured_image,
             gallery: product.gallery.map((image) => ({
               ...image,
-              image_url: `${BASE_URL}${image.image}`,
+              image: `${BASE_URL}${image.image}`,
             })),
             rating: averageRating.toFixed(1),
             reviewCount: totalReviews,
@@ -1434,7 +1434,7 @@ export class ProductListingController {
           featured_image: `${BASE_URL}${product.featured_image}`,
           gallery: product.gallery.map((image) => ({
             ...image,
-            image_url: `${BASE_URL}${image.image}`,
+            image: `${BASE_URL}${image.image}`,
           })),
           rating: averageRating.toFixed(1),
           reviews: totalReviews,
@@ -1543,7 +1543,7 @@ export class ProductListingController {
           featured_image: `${BASE_URL}${product.featured_image}`,
           gallery: product.gallery.map((image) => ({
             ...image,
-            image_url: `${BASE_URL}${image.image}`,
+            image: `${BASE_URL}${image.image}`,
           })),
           rating: averageRating.toFixed(1),
           reviews: totalReviews,
@@ -1660,7 +1660,7 @@ export class ProductListingController {
               : product.featured_image,
             gallery: product.gallery.map((image) => ({
               ...image,
-              image_url: `${BASE_URL}${image.image}`,
+              image: `${BASE_URL}${image.image}`,
             })),
             rating: averageRating.toFixed(1),
             reviewCount: totalReviews,
@@ -1764,7 +1764,7 @@ export class ProductListingController {
               : product.featured_image,
             gallery: product.gallery.map((image) => ({
               ...image,
-              image_url: `${BASE_URL}${image.image}`,
+              image: `${BASE_URL}${image.image}`,
             })),
             rating: averageRating.toFixed(1),
             reviewCount: totalReviews,
@@ -1857,7 +1857,7 @@ export class ProductListingController {
             featured_image: `${BASE_URL}${product.featured_image}`,
             gallery: product.gallery.map((image) => ({
               ...image,
-              image_url: `${BASE_URL}${image.image}`,
+              image: `${BASE_URL}${image.image}`,
             })),
             rating: averageRating.toFixed(1),
             reviews: totalReviews,
