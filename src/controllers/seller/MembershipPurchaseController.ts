@@ -330,7 +330,7 @@ export class UserMembershipController {
       // Find active membership by user ID
       const activeMembership = await userMembershipRepo.findOne({
         where: { user: { id: parseInt(userId, 10) }, is_active: true },
-        relations: ["membership_plan"],
+        relations: ["membership_plan" , "user"],
       });
 
       if (!activeMembership) {
