@@ -131,6 +131,18 @@ export class UserMembershipController {
       newMembership.membership_plan = membershipPlan;
       newMembership.payment_status = "notpaid";
 
+      // making default true by adding this code for testing purpose
+
+      // Calculate start and end date
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + membershipPlan.duration_months);
+
+      newMembership.is_active = true;
+      newMembership.start_date = startDate;
+      newMembership.end_date = endDate;
+      newMembership.status = "active";
+
       const createdMembership = await userMembershipRepo.save(newMembership);
       res.status(201).json({
         membership: createdMembership,
