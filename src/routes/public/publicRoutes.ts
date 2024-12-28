@@ -11,6 +11,7 @@ import { getProductsDynamically } from "../../controllers/public/DynamicProducts
 import { StateController } from "../../controllers/admin/StateController";
 import { StatesCitiesController } from "../../controllers/public/StatesCitiesController";
 import { NotificationController } from "../../controllers/public/NotificationController";
+import { parsing } from "../../config/parseMulter";
 
 const router = Router();
 
@@ -123,6 +124,7 @@ const customerSupportController = new CustomerSupportPublic();
 
 router.post(
   "/customer-support",
+  parsing,
   [
     body("name").notEmpty().withMessage("The name field is required"),
     body("email").notEmpty().withMessage("The email field is required"),

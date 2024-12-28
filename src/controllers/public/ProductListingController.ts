@@ -563,9 +563,18 @@ export class ProductListingController {
                         state: user.profile.state,
                         address: user.profile.address,
                         active: user.profile.active,
+
                         image: user.profile.image
                           ? `${BASE_URL}${user.profile.image}`
                           : null,
+                      }
+                    : null,
+
+                  store: user.store_profile
+                    ? {
+                        id: user?.store_profile.id,
+                        store_name: user?.store_profile.store_name,
+                        store_trusted: user?.store_profile.trusted,
                       }
                     : null,
                 }

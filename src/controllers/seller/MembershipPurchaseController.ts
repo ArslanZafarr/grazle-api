@@ -282,9 +282,9 @@ export class UserMembershipController {
       });
 
       if (!activeMembership) {
-        return res.status(404).json({
+        return res.status(200).json({
           success: false,
-          message: "No active membership found for the seller",
+          message: "No active membership found",
         });
       }
 
