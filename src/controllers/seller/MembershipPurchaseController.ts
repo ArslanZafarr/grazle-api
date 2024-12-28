@@ -125,18 +125,18 @@ export class UserMembershipController {
         });
       }
 
-      // Create new membership
-      const newMembership = new UserMembership();
-      newMembership.user = user;
-      newMembership.membership_plan = membershipPlan;
-      newMembership.payment_status = "notpaid";
-
-      // making default true by adding this code for testing purpose
-
       // Calculate start and end date
       const startDate = new Date();
       const endDate = new Date();
       endDate.setMonth(endDate.getMonth() + membershipPlan.duration_months);
+
+      // Create new membership
+      const newMembership = new UserMembership();
+      newMembership.user = user;
+      newMembership.membership_plan = membershipPlan;
+      newMembership.payment_status = "paid";
+
+      // making default true by adding this code for testing purpose
 
       newMembership.is_active = true;
       newMembership.start_date = startDate;
