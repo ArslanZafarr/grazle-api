@@ -158,6 +158,46 @@ export class UserMembershipController {
     }
   }
 
+  async cancelMembership(req: Request, res: Response) {
+    try {
+      const user = (req as any).user; // Extract user from request (assuming middleware handles auth)
+      const userId = user.id;
+
+      const userMembershipRepo = appDataSource.getRepository(UserMembership);
+
+      // Find active membership for the user
+      const activeMembership = await userMembershipRepo.findOne({
+        where: { user: { id: parseInt(userId, 10) }, is_active: true },
+      });
+
+      if (!activeMembership) {
+        return res.status(404).json({
+          success: false,
+          message: "No active membership found for the user",
+        });
+      }
+
+      // Update the membership to inactive
+      activeMembership.status = "inactive";
+      activeMembership.is_active = false;
+      activeMembership.updated_at = new Date();
+
+      const userMembership = await userMembershipRepo.save(activeMembership);
+
+      res.status(200).json({
+        success: true,
+        message: "Membership cancelled successfully",
+        membership: userMembership,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to cancel membership",
+        error: error,
+      });
+    }
+  }
+
   async confirmPayment(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -302,7 +342,7 @@ export class UserMembershipController {
 
       res.status(200).json({
         success: true,
-        membership_plan: activeMembership.membership_plan,
+        membership_plan: activeMembership,
       });
     } catch (error) {
       res.status(500).json({

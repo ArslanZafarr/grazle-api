@@ -366,6 +366,13 @@ router.post(
 
   userMembershipPlanController.purchaseMembership
 );
+
+router.post(
+  "/membership/cancel",
+  authMiddleware,
+  userMembershipPlanController.cancelMembership
+);
+
 router.post(
   "/confirm-plan-payment/:id",
   authMiddleware,
