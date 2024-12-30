@@ -86,11 +86,21 @@ router.post(
 );
 router.put("/buyer/orders/:id", authMiddleware, orderController.updateOrder);
 router.delete("/buyer/orders/:id", authMiddleware, orderController.deleteOrder);
+
+router.post(
+  "/buyer/cancel-order",
+  authMiddleware,
+  parsing,
+  [body("order_id").notEmpty().withMessage("The order_id field is required")],
+  orderController.cancelThisOrder
+);
+
 router.get(
   "/buyer/orders/:id/cancel",
   authMiddleware,
   orderController.cancelOrder
 );
+
 router.get(
   "/buyer/orders/:id/track-status",
   authMiddleware,

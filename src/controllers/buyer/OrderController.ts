@@ -773,7 +773,7 @@ export class OrderController {
 
       const addressRepo = appDataSource.getRepository(Address);
       const address = await addressRepo.findOne({
-        where: { id:  order.address_id },
+        where: { id: order.address_id },
       });
 
       // Store user, category, and brand information to avoid multiple queries
@@ -939,6 +939,108 @@ export class OrderController {
 
       if (!user) {
         return res.status(404).json({
+          success: false,
+          message: "User not found for the provided order",
+        });
+      }
+
+      // Send email notification to seller about order cancellation
+      if (user.email) {
+        await sendOrderCancellationEmailToSeller(
+          user.email,
+          order.reference_id
+        );
+
+        // Create notification
+        const notification = new Notification();
+        notification.user_id = user?.id || null;
+        notification.title = "Order Confirmation";
+        notification.body = `Your order with ID ${order?.tracking_id} has been cancelled.`;
+
+        await notificationRepo.save(notification);
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Order cancelled successfully",
+      });
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      res
+        .status(500)
+        .json({ success: false, message: "Failed to cancel order" });
+    }
+  }
+
+  async cancelThisOrder(req: Request, res: Response) {
+    try {
+      // const { id } = req.params;
+
+      // Validation Error Handling
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        const result = errors.mapped();
+
+        const formattedErrors: Record<string, string[]> = {};
+        for (const key in result) {
+          formattedErrors[key.charAt(0).toLowerCase() + key.slice(1)] = [
+            result[key].msg,
+          ];
+        }
+
+        const errorCount = Object.keys(result).length;
+        const errorSuffix =
+          errorCount > 1
+            ? ` (and ${errorCount - 1} more error${errorCount > 2 ? "s" : ""})`
+            : "";
+
+        const errorResponse = {
+          success: false,
+          message: `${result[Object.keys(result)[0]].msg}${errorSuffix}`,
+          errors: formattedErrors,
+        };
+
+        return res.status(400).json(errorResponse);
+      }
+
+      const { order_id } = req.body;
+
+      const orderRepo = appDataSource.getRepository(Order);
+      const statusHistoryRepo = appDataSource.getRepository(OrderStatusHistory);
+      const notificationRepo = appDataSource.getRepository(Notification);
+
+      // Fetch the order to update
+      const order = await orderRepo.findOne({
+        where: { id: parseInt(order_id, 10) },
+      });
+
+      const userRepo = appDataSource.getRepository(User);
+      const status = "cancelled";
+
+      if (!order) {
+        return res.status(200).json({
+          success: false,
+          message: "Order not found with the provided ID",
+        });
+      }
+
+      order.updated_at = new Date(); // Update the updated_at timestamp
+
+      const cancelledStatusHistory = new OrderStatusHistory();
+      cancelledStatusHistory.status = status;
+      cancelledStatusHistory.changed_at = new Date();
+      cancelledStatusHistory.order = order;
+
+      await statusHistoryRepo.save(cancelledStatusHistory);
+      await orderRepo.save(order);
+
+      // Find the user by ID
+      const user = await userRepo.findOne({
+        where: { id: order.user_id },
+      });
+
+      if (!user) {
+        return res.status(200).json({
           success: false,
           message: "User not found for the provided order",
         });
