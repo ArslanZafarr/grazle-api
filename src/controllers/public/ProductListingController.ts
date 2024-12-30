@@ -730,6 +730,7 @@ export class ProductListingController {
           store_name: user?.store_profile
             ? user?.store_profile?.store_name
             : null,
+          trusted_badge: user?.store_profile?.trusted,
           image: user?.store_profile
             ? `${BASE_URL}${user?.store_profile?.store_image}`
             : null,
