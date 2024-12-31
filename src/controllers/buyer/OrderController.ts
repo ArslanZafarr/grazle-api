@@ -317,7 +317,7 @@ export class OrderController {
             payment_type: order.payment_type,
             coupon_code: order.coupon_code,
             discount: order.discount,
-            date: format(new Date(order.date), "MMMM d, yyyy"),
+            date: format(new Date(order.date), "MMMM d, yyyy, h:mm:ss a"),
             payment: order.payment,
             expected_delivery_date: order.expected_delivery_date,
             transaction_id: order.transaction_id,
@@ -330,6 +330,7 @@ export class OrderController {
                 "MMMM d, yyyy, h:mm:ss a"
               ),
             })),
+            order_tracking: this.generateOrderTracking(order.status_history),
           };
         }
 
@@ -437,6 +438,38 @@ export class OrderController {
       console.error("Error fetching orders:", error);
       res.status(500).json({ error: "Failed to fetch orders" });
     }
+  }
+
+  // Helper method to generate order_tracking object
+  private generateOrderTracking(
+    statusHistory: OrderStatusHistory[]
+  ): Record<string, any> {
+    const orderTracking: Record<string, any> = {
+      in_progress: null,
+      shipped: null,
+      delivered: null,
+    };
+
+    statusHistory.forEach((history) => {
+      if (history.status === "in_progress") {
+        orderTracking.in_progress = format(
+          new Date(history.changed_at),
+          "MMMM d, yyyy, h:mm:ss a"
+        );
+      } else if (history.status === "shipped") {
+        orderTracking.shipped = format(
+          new Date(history.changed_at),
+          "MMMM d, yyyy, h:mm:ss a"
+        );
+      } else if (history.status === "completed") {
+        orderTracking.delivered = format(
+          new Date(history.changed_at),
+          "MMMM d, yyyy, h:mm:ss a"
+        );
+      }
+    });
+
+    return orderTracking;
   }
 
   async getAllOrdersWithoutPagination(req: Request, res: Response) {
