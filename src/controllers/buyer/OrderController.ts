@@ -434,9 +434,12 @@ export class OrderController {
         message: "Orders fetched successfully for the user",
         meta: paginatedOrders.meta, // Pagination metadata
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching orders:", error);
-      res.status(500).json({ error: "Failed to fetch orders" });
+      res.status(500).json({
+        error: "Failed to fetch orders",
+        message: error.message,
+      });
     }
   }
 
