@@ -247,6 +247,10 @@ export class OrderController {
     }
   }
 
+  constructor() {
+    this.getAllOrders = this.getAllOrders.bind(this);
+  }
+
   async getAllOrders(req: Request, res: Response) {
     try {
       const user = (req as any).user;
