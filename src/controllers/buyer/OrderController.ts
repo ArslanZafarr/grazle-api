@@ -319,8 +319,17 @@ export class OrderController {
             discount: order.discount,
             date: format(new Date(order.date), "MMMM d, yyyy"),
             payment: order.payment,
+            expected_delivery_date: order.expected_delivery_date,
             transaction_id: order.transaction_id,
             products: [],
+            status_history: order.status_history.map((history) => ({
+              id: history.id,
+              status: history.status,
+              changed_at: format(
+                new Date(history.changed_at),
+                "MMMM d, yyyy, h:mm:ss a"
+              ),
+            })),
           };
         }
 
@@ -380,6 +389,8 @@ export class OrderController {
               tags: product.tags,
               gallery: product.gallery,
               quantity: orderProduct.quantity,
+              discount: product.discount,
+
               user: {
                 id: productUser?.id,
                 name: productUser?.username,
