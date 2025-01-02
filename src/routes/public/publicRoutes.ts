@@ -12,6 +12,7 @@ import { StateController } from "../../controllers/admin/StateController";
 import { StatesCitiesController } from "../../controllers/public/StatesCitiesController";
 import { NotificationController } from "../../controllers/public/NotificationController";
 import { parsing } from "../../config/parseMulter";
+import { SponsorController } from "../../controllers/public/SponsorController";
 
 const router = Router();
 
@@ -157,6 +158,15 @@ router.get(
   "/latest-notifications/:id",
   notificationController.getUserNotifications
 );
-router.get("/all-notifications/:id", notificationController.seeAllNotifications);
+router.get(
+  "/all-notifications/:id",
+  notificationController.seeAllNotifications
+);
+
+// Sponsors Routes
+const sponsorController = new SponsorController();
+
+router.get("/all-sponsors", sponsorController.getAllSponsors);
+router.get("/latest-sponsors", sponsorController.getAllSponsors);
 
 export default router;

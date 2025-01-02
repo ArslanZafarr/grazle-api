@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { appDataSource } from "../../config/db";
 import { Sponsor } from "../../entities/Sponsor";
 import { validationResult } from "express-validator";
+import { paginate } from "nestjs-typeorm-paginate";
 
 const BASE_URL = process.env.IMAGE_PATH || "https://api.grazle.co.in/";
 
@@ -81,35 +82,43 @@ export class AdminSponsorController {
     try {
       const sponsorRepository = appDataSource.getRepository(Sponsor);
 
-      // Extract `type` from query parameters
-      const { type } = req.query;
+      // Extract `type`, `page`, and `limit` from query parameters
+      const { type, page = 1, limit = 10 } = req.query;
 
-      // Build query options
-      const queryOptions: any = {};
+      // Build query builder for filtering and pagination
+      let queryBuilder = sponsorRepository.createQueryBuilder("sponsor");
+
       if (type) {
-        queryOptions.type = type;
+        queryBuilder = queryBuilder.where("sponsor.type = :type", { type });
       }
 
-      // Fetch sponsors based on the query
-      const sponsors = await sponsorRepository.find({
-        where: queryOptions,
+      // Apply pagination
+      const pagination = await paginate<Sponsor>(queryBuilder, {
+        page: Number(page),
+        limit: Number(limit),
       });
 
-      // Concatenate BASE_URL with the `url` field
-
-      const updatedSponsors = sponsors.map((sponsor) => ({
+      // Attach BASE_URL to `url` field for each sponsor
+      const updatedSponsors = pagination.items.map((sponsor) => ({
         ...sponsor,
         url: `${BASE_URL}${sponsor.url}`,
       }));
 
+      // Send response with pagination details
       return res.status(200).json({
         message: "Sponsors retrieved successfully",
         data: updatedSponsors,
+        total: pagination.meta.totalItems,
+        page: pagination.meta.currentPage,
+        limit: pagination.meta.itemsPerPage,
+        totalPages: pagination.meta.totalPages,
+        success: true,
       });
     } catch (error) {
-      return res
-        .status(500)
-        .json({ message: "Error fetching sponsors", error });
+      return res.status(500).json({
+        message: "Error fetching sponsors",
+        error,
+      });
     }
   }
 
