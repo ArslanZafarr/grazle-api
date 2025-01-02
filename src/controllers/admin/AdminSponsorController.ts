@@ -3,6 +3,8 @@ import { appDataSource } from "../../config/db";
 import { Sponsor } from "../../entities/Sponsor";
 import { validationResult } from "express-validator";
 
+const BASE_URL = process.env.IMAGE_PATH || "https://api.grazle.co.in/";
+
 export class AdminSponsorController {
   // Create a new sponsor
   async createSponsor(req: Request, res: Response) {
@@ -34,26 +36,25 @@ export class AdminSponsorController {
         return res.status(400).json(errorResponse);
       }
 
+      const reqs = req.body;
+      console.log("🚀 ~ AdminSponsorController ~ createSponsor ~ reqs:", reqs);
 
-      const reqs = req.body
-      console.log("🚀 ~ AdminSponsorController ~ createSponsor ~ reqs:", reqs)
-      
-      const reqi = (req as any).file
-      console.log("🚀 ~ AdminSponsorController ~ createSponsor ~ reqi:", reqi)
+      const reqi = (req as any).file;
+      console.log("🚀 ~ AdminSponsorController ~ createSponsor ~ reqi:", reqi);
 
       const { title, type, sponsor_link } = req.body;
 
       const url = (req as any).file?.path.replace(/\\/g, "/");
-      console.log("🚀 ~ AdminSponsorController ~ createSponsor ~ url:", url)
+      console.log("🚀 ~ AdminSponsorController ~ createSponsor ~ url:", url);
 
-    //   // Check if URL is missing
-    //   if (!url) {
-    //     return res.status(400).json({
-    //       success: false,
-    //       message: "The sponsor must include a valid URL for the content.",
-    //       errors: { url: ["URL is required"] },
-    //     });
-    //   }
+      //   // Check if URL is missing
+      //   if (!url) {
+      //     return res.status(400).json({
+      //       success: false,
+      //       message: "The sponsor must include a valid URL for the content.",
+      //       errors: { url: ["URL is required"] },
+      //     });
+      //   }
 
       const sponsorRepository = appDataSource.getRepository(Sponsor);
 
@@ -80,11 +81,30 @@ export class AdminSponsorController {
     try {
       const sponsorRepository = appDataSource.getRepository(Sponsor);
 
-      const sponsors = await sponsorRepository.find();
+      // Extract `type` from query parameters
+      const { type } = req.query;
+
+      // Build query options
+      const queryOptions: any = {};
+      if (type) {
+        queryOptions.type = type;
+      }
+
+      // Fetch sponsors based on the query
+      const sponsors = await sponsorRepository.find({
+        where: queryOptions,
+      });
+
+      // Concatenate BASE_URL with the `url` field
+
+      const updatedSponsors = sponsors.map((sponsor) => ({
+        ...sponsor,
+        url: `${BASE_URL}${sponsor.url}`,
+      }));
 
       return res.status(200).json({
         message: "Sponsors retrieved successfully",
-        data: sponsors,
+        data: updatedSponsors,
       });
     } catch (error) {
       return res
@@ -107,6 +127,8 @@ export class AdminSponsorController {
       if (!sponsor) {
         return res.status(404).json({ message: "Sponsor not found" });
       }
+
+      sponsor.url = `${BASE_URL}${sponsor.url}`;
 
       return res.status(200).json({
         message: "Sponsor retrieved successfully",
