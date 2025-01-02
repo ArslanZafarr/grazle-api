@@ -167,6 +167,6 @@ router.get(
 const sponsorController = new SponsorController();
 
 router.get("/all-sponsors", sponsorController.getAllSponsors);
-router.get("/latest-sponsors", sponsorController.getAllSponsors);
+router.get("/latest-sponsors", sponsorController.getLatestSponsors);
 
 export default router;
