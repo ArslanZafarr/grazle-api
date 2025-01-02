@@ -602,7 +602,16 @@ router.post(
   ],
   sponsorController.createSponsor
 );
-router.put("/admin/sponsors/:id", sponsorController.updateSponsor);
-router.delete("/admin/sponsors/:id", sponsorController.deleteSponsor);
+router.put(
+  "/admin/sponsors/:id",
+  adminMiddleware,
+  parsing,
+  sponsorController.updateSponsor
+);
+router.delete(
+  "/admin/sponsors/:id",
+  adminMiddleware,
+  sponsorController.deleteSponsor
+);
 
 export default router;

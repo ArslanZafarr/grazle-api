@@ -155,11 +155,11 @@ export class AdminSponsorController {
         return res.status(404).json({ message: "Sponsor not found" });
       }
 
-      sponsor.title = title ?? sponsor.title;
-      sponsor.type = type ?? sponsor.type;
-      sponsor.url = url ?? sponsor.url;
-      sponsor.sponsor_link = sponsor_link ?? sponsor.sponsor_link;
-      sponsor.active = active ?? sponsor.active;
+      sponsor.title = title || sponsor.title;
+      sponsor.type = type || sponsor.type;
+      sponsor.url = url || sponsor.url;
+      sponsor.sponsor_link = sponsor_link || sponsor.sponsor_link;
+      sponsor.active = active || sponsor.active;
 
       const updatedSponsor = await sponsorRepository.save(sponsor);
 
