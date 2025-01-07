@@ -14,6 +14,9 @@ export class StoreController {
       const {
         page = 1,
         limit = 10,
+        keywords,
+        min_price,
+        max_price,
         latest_arrival,
         price,
         top_rated,
@@ -41,6 +44,9 @@ export class StoreController {
         });
       }
 
+      const minPrice = parseFloat(min_price as string);
+      const maxPrice = parseFloat(max_price as string);
+
       // Fetch products created by the user with pagination
       const productRepository = appDataSource.getRepository(Product);
       let queryBuilder = productRepository
@@ -57,6 +63,32 @@ export class StoreController {
           "product.created_at",
           latest_arrival === "desc" ? "DESC" : "ASC"
         );
+      }
+
+      // Apply keywords filter only if provided
+      if (keywords) {
+        queryBuilder = queryBuilder.where(
+          "(product.title LIKE :keywords OR product.description LIKE :keywords OR product.tags LIKE :keywords)",
+          { keywords: `%${keywords}%` }
+        );
+      }
+
+      if (!isNaN(minPrice) && !isNaN(maxPrice)) {
+        queryBuilder = queryBuilder.andWhere(
+          "product.price BETWEEN :minPrice AND :maxPrice",
+          {
+            minPrice,
+            maxPrice,
+          }
+        );
+      } else if (!isNaN(minPrice)) {
+        queryBuilder = queryBuilder.andWhere("product.price >= :minPrice", {
+          minPrice,
+        });
+      } else if (!isNaN(maxPrice)) {
+        queryBuilder = queryBuilder.andWhere("product.price <= :maxPrice", {
+          maxPrice,
+        });
       }
 
       // Sorting based on price parameter
@@ -167,6 +199,7 @@ export class StoreController {
           store_products: pagination.items.length,
           store_rating: storeRating,
           store_reviews: totalStoreReviews,
+          storeTrusted : userProfile?.store_profile.trusted
         },
         products: productsWithReviews,
         meta: {
