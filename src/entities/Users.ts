@@ -46,6 +46,9 @@ export class User {
   @Column({ type: "boolean", default: false })
   is_deleted: boolean;
 
+  @Column({ type: "varchar", length: 255, nullable: true })
+  referral_code: string; // Added referral_code column
+
   @CreateDateColumn({ type: "timestamp" })
   created_at: Date;
 

@@ -68,10 +68,14 @@ export class ReferralRankingController {
       // Transform username to uppercase and replace spaces with dashes
       const userName = user.username.toUpperCase().replace(/\s+/g, "-");
 
+      // Extract the first three letters of the username, transform them to uppercase, and handle cases where the username is too short
+      const userNamePrefix = user.username.slice(0, 3).toUpperCase();
+
       // Generate a 7-character unique string
       const uniqueString = generateRandomString(7);
 
-      const generatedRefCode = `${userName}-${uniqueString}`;
+      // Construct the referral code with the prefix and the unique string
+      const generatedRefCode = `${userNamePrefix}-${uniqueString}`;
 
       // Create the initial referral record
       let referral = referralRepository.create({

@@ -14,6 +14,7 @@ import { NotificationSettings } from "../../entities/NotificationSettings";
 const ms = require("ms");
 import axios from "axios";
 import { OAuth2Client } from "google-auth-library";
+import { generateRandomString } from "../../helper/uniqueStringGenerator";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -70,6 +71,12 @@ export class AuthController {
       newUser.username = username;
       newUser.email = email;
       newUser.password = hashedPassword;
+
+      // Generate the referral code here
+      const userNamePrefix = username.slice(0, 3).toUpperCase();
+      const uniqueString = generateRandomString(7);
+      const generatedRefCode = `${userNamePrefix}-${uniqueString}`;
+      newUser.referral_code = generatedRefCode;
 
       const newProfile = new Profile();
       newProfile.phone = phone;
@@ -134,6 +141,7 @@ export class AuthController {
         token: token,
         user: {
           ...userWithoutPassword,
+          referral_code: generatedRefCode,
           role: role,
           ...(role === "seller" && { store_profile: storeProfileResponse }),
         },
@@ -382,6 +390,12 @@ export class AuthController {
       newUser.email = email;
       newUser.password = hashedPassword;
 
+      // Generate the referral code here
+      const userNamePrefix = username.slice(0, 3).toUpperCase();
+      const uniqueString = generateRandomString(7);
+      const generatedRefCode = `${userNamePrefix}-${uniqueString}`;
+      newUser.referral_code = generatedRefCode;
+
       const newProfile = new Profile();
       newProfile.phone = phone;
       newUser.profile = newProfile;
@@ -483,6 +497,7 @@ export class AuthController {
         user: {
           ...userWithoutPassword,
           role: "seller",
+          referral_code: generatedRefCode,
           store_profile: storeProfileResponse,
         },
         success: true,
@@ -625,7 +640,7 @@ export class AuthController {
         secure: true, // true for 465, false for other ports
         auth: {
           user: "info@grazle.co.in",
-          pass: "Hardlabs@365@365", 
+          pass: "Hardlabs@365@365",
         },
       });
 
