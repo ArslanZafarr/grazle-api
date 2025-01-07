@@ -8,6 +8,7 @@ import publicRoutes from "./public/publicRoutes";
 import productRoutes from "./admin/productRoutes/productRoutes";
 import phonePeRoutes from "./payment/phonePeRoutes";
 import ccavenueRoutes from "./payment/ccAvenueRoute";
+import razorpayRoutes from "./payment/razorpayRoutes";
 
 import profileRoutes from "./profileRoutes";
 import referralRoute from "./referral/referralRoute";
@@ -30,6 +31,7 @@ router.use("/", productRoutes);
 // router.use("/payment", paymentRoutes);
 router.use("/phonepe", phonePeRoutes);
 router.use("/ccavenue", ccavenueRoutes);
+router.use("/razorpay", razorpayRoutes);
 
 // For Referral Ranking
 router.use("/", referralRoute);
