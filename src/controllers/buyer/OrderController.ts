@@ -168,6 +168,14 @@ export class OrderController {
             .json({ message: `Product with id ${productId} not found` });
         }
 
+        // Increment the 'sold' field by the quantity purchased
+        product.sold += quantity;
+
+        // Decrement stock quantity
+        product.stock_quantity -= quantity;
+        
+        await productRepository.save(product);
+
         const orderProduct = new OrderProduct();
         orderProduct.order = order;
         orderProduct.product = product;

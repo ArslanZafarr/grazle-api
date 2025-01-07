@@ -79,6 +79,9 @@ export class Product {
   @Column({ type: "boolean", default: false })
   is_festival_event: boolean;
 
+  @Column({ type: "int", default: 0 })
+  sold: number;
+
   @CreateDateColumn({ type: "timestamp" })
   created_at: Date;
 

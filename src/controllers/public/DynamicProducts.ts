@@ -2,10 +2,9 @@ import { Request, Response } from "express";
 import { appDataSource } from "../../config/db";
 import { Product } from "../../entities/Product";
 import { Review } from "../../entities/Review";
+import { StoreProfile } from "../../entities/StoreProfile";
 
-const BASE_URL =
-  process.env.IMAGE_PATH ||
-  "https://api.grazle.co.in/";
+const BASE_URL = process.env.IMAGE_PATH || "https://api.grazle.co.in/";
 
 async function getRandomProducts(limit: number): Promise<Product[]> {
   const productRepository = appDataSource.getRepository(Product);
@@ -29,6 +28,7 @@ export async function getProductsDynamically(req: Request, res: Response) {
     const randomProducts = await getRandomProducts(10);
 
     const reviewRepository = appDataSource.getRepository(Review);
+    const storeProfileRepository = appDataSource.getRepository(StoreProfile);
 
     // Fetch reviews for each product
     const productsWithReviews = await Promise.all(
@@ -45,6 +45,15 @@ export async function getProductsDynamically(req: Request, res: Response) {
               totalReviews
             : 0;
 
+        // Fetch store profile to get the trusted field
+        const storeProfile = await storeProfileRepository.findOne({
+          where: { user: { id: product.user_id } },
+        });
+
+        const storeTrusted = storeProfile?.trusted
+          ? storeProfile?.trusted
+          : false;
+
         // Attach base URL to featured_image and gallery images
         const productWithBaseUrl = {
           ...product,
@@ -57,6 +66,7 @@ export async function getProductsDynamically(req: Request, res: Response) {
           })),
           rating: averageRating.toFixed(1),
           reviews: totalReviews,
+          store_trusted: storeTrusted, // Add the trusted field here
         };
 
         return productWithBaseUrl;

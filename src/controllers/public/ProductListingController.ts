@@ -11,6 +11,7 @@ import { In } from "typeorm";
 import { UserInteractionProducts } from "../../entities/UserInteractionProducts";
 import { ReviewImage } from "../../entities/ReviewImage";
 import { Offer } from "../../entities/Offer";
+import { StoreProfile } from "../../entities/StoreProfile";
 
 interface ProductWithoutTtimestamps {
   id: number;
@@ -174,6 +175,7 @@ export class ProductListingController {
       const { categoryId, brandId, page = 1, limit = 10 } = req.query;
       const productRepository = appDataSource.getRepository(Product);
       const reviewRepository = appDataSource.getRepository(Review);
+      const storeProfileRepository = appDataSource.getRepository(StoreProfile);
 
       const distinctProductIds = productRepository
         .createQueryBuilder("product")
@@ -223,6 +225,15 @@ export class ProductListingController {
                 totalReviews
               : 0;
 
+          // Fetch store profile to get the trusted field
+          const storeProfile = await storeProfileRepository.findOne({
+            where: { user: { id: product.user_id } },
+          });
+
+          const storeTrusted = storeProfile?.trusted
+            ? storeProfile?.trusted
+            : false;
+
           return {
             ...product,
             featured_image: product?.featured_image
@@ -234,6 +245,7 @@ export class ProductListingController {
             })),
             rating: averageRating.toFixed(1),
             reviews: totalReviews,
+            store_trusted: storeTrusted, // Add the trusted field here
           };
         })
       );
@@ -244,6 +256,195 @@ export class ProductListingController {
         page: paginatedIds.meta.currentPage,
         limit: paginatedIds.meta.itemsPerPage,
         totalPages: paginatedIds.meta.totalPages,
+        success: true,
+        message: "Products retrieved successfully!",
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to retrieve products",
+        error: error.message,
+      });
+    }
+  }
+
+  async relatedProduct(req: Request, res: Response) {
+    try {
+      const { product_id, category_id } = req.query;
+
+      if (!product_id || !category_id) {
+        return res.status(400).json({
+          success: false,
+          message: "Product ID and Category ID are required",
+        });
+      }
+
+      const productRepository = appDataSource.getRepository(Product);
+      const reviewRepository = appDataSource.getRepository(Review);
+      const storeProfileRepository = appDataSource.getRepository(StoreProfile);
+
+      const relatedProducts = await productRepository
+        .createQueryBuilder("product")
+        .leftJoinAndSelect("product.offer", "offer")
+        .leftJoinAndSelect("product.gallery", "gallery")
+        .where("product.category_id = :category_id", { category_id })
+        .andWhere("product.id != :product_id", { product_id })
+        .orderBy("product.created_at", "DESC")
+        .limit(10);
+
+      const products = await relatedProducts.getMany();
+
+      // Fetch reviews for each product
+      const productsWithReviews = await Promise.all(
+        products.map(async (product) => {
+          const reviews = await reviewRepository.find({
+            where: { product_id: product.id },
+            order: { created_at: "DESC" },
+          });
+
+          const totalReviews = reviews.length;
+          const averageRating =
+            totalReviews > 0
+              ? reviews.reduce((sum, review) => sum + review.rating, 0) /
+                totalReviews
+              : 0;
+
+          // Fetch store profile to get the trusted field
+          const storeProfile = await storeProfileRepository.findOne({
+            where: { user: { id: product.user_id } },
+          });
+
+          const storeTrusted = storeProfile?.trusted
+            ? storeProfile?.trusted
+            : false;
+
+          return {
+            ...product,
+            featured_image: product?.featured_image
+              ? `${BASE_URL}${product?.featured_image}`
+              : null,
+            gallery: product.gallery.map((image) => ({
+              ...image,
+              image: `${BASE_URL}${image.image}`,
+            })),
+            rating: averageRating.toFixed(1),
+            reviews: totalReviews,
+            store_trusted: storeTrusted, // Add the trusted field here
+          };
+        })
+      );
+
+      res.status(200).json({
+        products: productsWithReviews,
+        success: true,
+        message: "Related products retrieved successfully!",
+      });
+    } catch (error: any) {
+      console.error("Error in relatedProduct:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to retrieve related products",
+        error: error.message,
+      });
+    }
+  }
+
+  async getAllProductsWithOffer(req: Request, res: Response) {
+    try {
+      const { category_id, brand_id, page = 1, limit = 10 } = req.query;
+      const productRepository = appDataSource.getRepository(Product);
+      const reviewRepository = appDataSource.getRepository(Review);
+      const storeProfileRepository = appDataSource.getRepository(StoreProfile);
+
+      const queryBuilder = productRepository
+        .createQueryBuilder("product")
+        .leftJoinAndSelect("product.gallery", "gallery")
+        .leftJoinAndSelect("product.offer", "offer")
+        .orderBy("product.created_at", "DESC");
+
+      if (category_id) {
+        queryBuilder.andWhere("product.category_id = :category_id", {
+          category_id: Number(category_id),
+        });
+      }
+
+      if (brand_id) {
+        queryBuilder.andWhere("product.brand_id = :brand_id", {
+          brand_id: Number(brand_id),
+        });
+      }
+
+      // Filter products where offer is not null and offer.active is true
+      queryBuilder.andWhere("offer.id IS NOT NULL");
+      queryBuilder.andWhere("offer.active = :active", { active: true });
+
+      const pagination = await paginate<Product>(queryBuilder, {
+        page: Number(page),
+        limit: Number(limit),
+      });
+
+      // Fetch reviews for each product
+      const productsWithReviews: ProductWithExtras[] = await Promise.all(
+        pagination.items.map(async (product) => {
+          const reviews = await reviewRepository.find({
+            where: { product_id: product.id },
+            order: { created_at: "DESC" },
+          });
+
+          const totalReviews = reviews.length;
+          const averageRating =
+            totalReviews > 0
+              ? reviews.reduce((sum, review) => sum + review.rating, 0) /
+                totalReviews
+              : 0;
+
+          // Fetch store profile to get the trusted field
+          const storeProfile = await storeProfileRepository.findOne({
+            where: { user: { id: product.user_id } },
+          });
+
+          const storeTrusted = storeProfile?.trusted
+            ? storeProfile?.trusted
+            : false;
+
+          // Attach reviews, average rating, total reviews, and updated URLs to the product
+          return {
+            ...product,
+            featured_image: product.featured_image
+              ? `${BASE_URL}${product.featured_image}`
+              : product.featured_image,
+            gallery: product.gallery.map((image) => ({
+              ...image,
+              image: `${BASE_URL}${image.image}`,
+            })),
+            rating: averageRating.toFixed(1),
+            reviewCount: totalReviews,
+            store_trusted: storeTrusted, // Add the trusted field here
+          };
+        })
+      );
+
+      // Group products by offer
+      const offersWithProducts = productsWithReviews.reduce((acc, product) => {
+        const offer = product.offer;
+        if (offer) {
+          if (!acc[offer.id]) {
+            acc[offer.id] = {
+              offer,
+              offer_products: [] as ProductWithExtras[],
+            };
+          }
+          acc[offer.id].offer_products.push(product);
+        }
+        return acc;
+      }, {} as Record<number, { offer: Offer; offer_products: ProductWithExtras[] }>);
+
+      res.status(200).json({
+        offers: Object.values(offersWithProducts),
+        total: pagination.meta.totalItems,
+        page: pagination.meta.currentPage,
+        limit: pagination.meta.itemsPerPage,
+        totalPages: pagination.meta.totalPages,
         success: true,
         message: "Products retrieved successfully!",
       });
@@ -692,6 +893,7 @@ export class ProductListingController {
         active: product.active,
         is_sponsored: product.is_sponsored,
         is_festival_event: product.is_festival_event,
+        sold: product.sold,
         created_at: product.created_at,
         gallery: product.gallery,
         updated_at: product.updated_at,
@@ -933,6 +1135,7 @@ export class ProductListingController {
         active: product.active,
         is_sponsored: product.is_sponsored,
         is_festival_event: product.is_festival_event,
+        sold: product.sold,
         created_at: product.created_at,
         gallery: product.gallery,
         updated_at: product.updated_at,
@@ -1154,145 +1357,6 @@ export class ProductListingController {
       res.status(500).json({
         success: false,
         message: "Failed to retrieve reviews",
-        error: error.message,
-      });
-    }
-  }
-
-  async relatedProduct(req: Request, res: Response) {
-    try {
-      const { product_id, category_id } = req.query;
-
-      if (!product_id || !category_id) {
-        return res.status(400).json({
-          success: false,
-          message: "Product ID and Category ID are required",
-        });
-      }
-
-      const productRepository = appDataSource.getRepository(Product);
-
-      const relatedProducts = await productRepository
-        .createQueryBuilder("product")
-        .leftJoinAndSelect("product.offer", "offer")
-        .leftJoinAndSelect("product.gallery", "gallery")
-        .where("product.category_id = :category_id", { category_id })
-        .andWhere("product.id != :product_id", { product_id })
-        .orderBy("product.created_at", "DESC")
-        .limit(10)
-        .getMany();
-
-      const productsWithoutTtimestamps = await Promise.all(
-        relatedProducts.map((product) => omitProductTtimestamps(product))
-      );
-
-      res.status(200).json({
-        products: productsWithoutTtimestamps,
-        success: true,
-        message: "Related products retrieved successfully!",
-      });
-    } catch (error: any) {
-      console.error("Error in relatedProduct:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to retrieve related products",
-        error: error.message,
-      });
-    }
-  }
-
-  async getAllProductsWithOffer(req: Request, res: Response) {
-    try {
-      const { category_id, brand_id, page = 1, limit = 10 } = req.query;
-      const productRepository = appDataSource.getRepository(Product);
-      const reviewRepository = appDataSource.getRepository(Review);
-
-      const queryBuilder = productRepository
-        .createQueryBuilder("product")
-        .leftJoinAndSelect("product.gallery", "gallery")
-        .leftJoinAndSelect("product.offer", "offer")
-        .orderBy("product.created_at", "DESC");
-
-      if (category_id) {
-        queryBuilder.andWhere("product.category_id = :category_id", {
-          category_id: Number(category_id),
-        });
-      }
-
-      if (brand_id) {
-        queryBuilder.andWhere("product.brand_id = :brand_id", {
-          brand_id: Number(brand_id),
-        });
-      }
-
-      // Filter products where offer is not null and offer.active is true
-      queryBuilder.andWhere("offer.id IS NOT NULL");
-      queryBuilder.andWhere("offer.active = :active", { active: true });
-
-      const pagination = await paginate<Product>(queryBuilder, {
-        page: Number(page),
-        limit: Number(limit),
-      });
-
-      // Fetch reviews for each product
-      const productsWithReviews: ProductWithExtras[] = await Promise.all(
-        pagination.items.map(async (product) => {
-          const reviews = await reviewRepository.find({
-            where: { product_id: product.id },
-            order: { created_at: "DESC" },
-          });
-
-          const totalReviews = reviews.length;
-          const averageRating =
-            totalReviews > 0
-              ? reviews.reduce((sum, review) => sum + review.rating, 0) /
-                totalReviews
-              : 0;
-
-          // Attach reviews, average rating, total reviews, and updated URLs to the product
-          return {
-            ...product,
-            featured_image: product.featured_image
-              ? `${BASE_URL}${product.featured_image}`
-              : product.featured_image,
-            gallery: product.gallery.map((image) => ({
-              ...image,
-              image: `${BASE_URL}${image.image}`,
-            })),
-            rating: averageRating.toFixed(1),
-            reviewCount: totalReviews,
-          };
-        })
-      );
-
-      // Group products by offer
-      const offersWithProducts = productsWithReviews.reduce((acc, product) => {
-        const offer = product.offer;
-        if (offer) {
-          if (!acc[offer.id]) {
-            acc[offer.id] = {
-              offer,
-              offer_products: [] as ProductWithExtras[],
-            };
-          }
-          acc[offer.id].offer_products.push(product);
-        }
-        return acc;
-      }, {} as Record<number, { offer: Offer; offer_products: ProductWithExtras[] }>);
-
-      res.status(200).json({
-        offers: Object.values(offersWithProducts),
-        total: pagination.meta.totalItems,
-        page: pagination.meta.currentPage,
-        limit: pagination.meta.itemsPerPage,
-        totalPages: pagination.meta.totalPages,
-        success: true,
-        message: "Products retrieved successfully!",
-      });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to retrieve products",
         error: error.message,
       });
     }

@@ -8,6 +8,7 @@ import { Brand } from "../../entities/Brand";
 import { Review } from "../../entities/Review";
 import { Pagination, paginate } from "nestjs-typeorm-paginate";
 import { Like } from "typeorm";
+import { StoreProfile } from "../../entities/StoreProfile";
 
 const BASE_URL = process.env.IMAGE_PATH || "https://api.grazle.co.in/";
 
@@ -45,7 +46,7 @@ export class SearchController {
 
       const productRepository = appDataSource.getRepository(Product);
       const reviewRepository = appDataSource.getRepository(Review);
-
+      const storeProfileRepository = appDataSource.getRepository(StoreProfile);
 
       const distinctProductIds = productRepository
         .createQueryBuilder("product")
@@ -186,6 +187,15 @@ export class SearchController {
                   totalComments
                 : 0;
 
+            // Fetch store profile to get the trusted field
+            const storeProfile = await storeProfileRepository.findOne({
+              where: { user: { id: product.user_id } },
+            });
+
+            const storeTrusted = storeProfile?.trusted
+              ? storeProfile?.trusted
+              : false;
+
             const gallery = product.gallery.map(({ id, image }) => ({
               id,
               image: `${BASE_URL}${image}`,
@@ -199,6 +209,7 @@ export class SearchController {
               price,
               rating: averageRating.toFixed(1),
               reviews: totalComments,
+              store_trusted: storeTrusted, // Add the trusted field here
               user: user
                 ? {
                     id: user.profile.id,
@@ -272,7 +283,6 @@ export class SearchController {
     }
   }
 
-
   async getSearchResultsWithoutPagination(req: Request, res: Response) {
     try {
       const {
@@ -289,40 +299,40 @@ export class SearchController {
         more_suitable,
         discount,
       } = req.query;
-  
+
       const minPrice = parseFloat(min_price as string);
       const maxPrice = parseFloat(max_price as string);
       const categoryId = category_id ? Number(category_id) : null;
-  
+
       const productRepository = appDataSource.getRepository(Product);
       const reviewRepository = appDataSource.getRepository(Review);
-  
+
       const distinctProductIds = productRepository
         .createQueryBuilder("product")
         .select("product.id")
         .leftJoin("product.reviews", "review")
         .addSelect("COUNT(review.id)", "reviewCount")
         .groupBy("product.id");
-  
+
       if (keywords) {
         distinctProductIds.where(
           "(product.title LIKE :keywords OR product.description LIKE :keywords OR product.tags LIKE :keywords)",
           { keywords: `%${keywords}%` }
         );
       }
-  
+
       if (categoryId) {
         distinctProductIds.andWhere("product.category_id = :category_id", {
           category_id: categoryId,
         });
       }
-  
+
       if (brand_id) {
         distinctProductIds.andWhere("product.brand_id = :brand_id", {
           brand_id: Number(brand_id),
         });
       }
-  
+
       if (!isNaN(minPrice) && !isNaN(maxPrice)) {
         distinctProductIds.andWhere(
           "product.price BETWEEN :minPrice AND :maxPrice",
@@ -336,7 +346,7 @@ export class SearchController {
       } else if (!isNaN(maxPrice)) {
         distinctProductIds.andWhere("product.price <= :maxPrice", { maxPrice });
       }
-  
+
       if (rating) {
         const ratingValue = parseInt(rating as string, 10);
         distinctProductIds
@@ -344,7 +354,7 @@ export class SearchController {
           .groupBy("product.id")
           .having("AVG(review.rating) >= :rating", { rating: ratingValue });
       }
-  
+
       if (latest_arrival === "desc") {
         distinctProductIds.orderBy("product.created_at", "DESC");
       } else if (price === "lowest") {
@@ -352,69 +362,69 @@ export class SearchController {
       } else if (price === "highest") {
         distinctProductIds.orderBy("product.price", "DESC");
       }
-  
+
       if (top_rated === "top") {
         distinctProductIds
           .leftJoin("product.reviews", "review")
           .groupBy("product.id")
           .having("AVG(review.rating) = 5.0");
       }
-  
+
       if (popular === "popular") {
         distinctProductIds
           .leftJoin("product.reviews", "review")
           .groupBy("product.id")
           .orderBy("COUNT(review.id)", "DESC");
       }
-  
+
       if (more_suitable === "suitable") {
         distinctProductIds
           .andWhere("product.discount IS NOT NULL AND product.discount > 0")
           .addOrderBy("reviewCount", "DESC");
       }
-  
+
       if (discount === "discount") {
         distinctProductIds.andWhere(
           "product.discount IS NOT NULL AND product.discount > 0"
         );
         distinctProductIds.addOrderBy("product.discount", "DESC");
       }
-  
+
       // Get all product IDs without pagination
       const distinctProductIdsResults = await distinctProductIds.getMany();
-  
+
       const productQuery = productRepository
         .createQueryBuilder("product")
         .leftJoinAndSelect("product.gallery", "gallery")
         .whereInIds(distinctProductIdsResults.map((item) => item.id))
         .orderBy("product.created_at", "DESC");
-  
+
       const products = await productQuery.getMany();
-  
+
       const productsWithDetails = await Promise.all(
         products.map(async (product) => {
           try {
             const price = product.price;
-  
+
             const user = product.user_id
               ? await appDataSource.getRepository(User).findOne({
                   where: { id: product.user_id },
                   relations: ["profile", "store_profile"],
                 })
               : null;
-  
+
             const category = product.category_id
               ? await appDataSource.getRepository(Category).findOne({
                   where: { id: product.category_id },
                 })
               : null;
-  
+
             const brand = product.brand_id
               ? await appDataSource.getRepository(Brand).findOne({
                   where: { id: product.brand_id },
                 })
               : null;
-  
+
             const reviews = await reviewRepository.find({
               where: { product_id: product.id },
             });
@@ -424,12 +434,12 @@ export class SearchController {
                 ? reviews.reduce((sum, review) => sum + review.rating, 0) /
                   totalComments
                 : 0;
-  
+
             const gallery = product.gallery.map(({ id, image }) => ({
               id,
               image: `${BASE_URL}${image}`,
             }));
-  
+
             const productWithDetails = {
               ...product,
               featured_image: product.featured_image
@@ -486,7 +496,7 @@ export class SearchController {
                 : null,
               gallery: gallery,
             };
-  
+
             return productWithDetails;
           } catch (error: any) {
             console.error("Error fetching details for product:", error.message);
@@ -494,11 +504,11 @@ export class SearchController {
           }
         })
       );
-  
+
       const filteredProducts = productsWithDetails.filter(
         (product) => product !== null
       );
-  
+
       res.status(200).json({
         success: true,
         message: "Search results fetched successfully!",
@@ -509,7 +519,6 @@ export class SearchController {
       res.status(500).json({ error: "Failed to fetch search results" });
     }
   }
-  
 
   async getPopularSearches(req: Request, res: Response) {
     try {

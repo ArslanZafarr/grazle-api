@@ -188,6 +188,86 @@ export class ReferralRankingController {
     }
   }
 
+  async joinReferral(req: Request, res: Response) {
+    try {
+      // Validation Error Handling
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        const result = errors.mapped();
+
+        const formattedErrors: Record<string, string[]> = {};
+        for (const key in result) {
+          formattedErrors[key.charAt(0).toLowerCase() + key.slice(1)] = [
+            result[key].msg,
+          ];
+        }
+
+        const errorCount = Object.keys(result).length;
+        const errorSuffix =
+          errorCount > 1
+            ? ` (and ${errorCount - 1} more error${errorCount > 2 ? "s" : ""})`
+            : "";
+
+        const errorResponse = {
+          success: false,
+          message: `${result[Object.keys(result)[0]].msg}${errorSuffix}`,
+          errors: formattedErrors,
+        };
+
+        return res.status(400).json(errorResponse);
+      }
+
+      // Extract referral_code from the request body
+      const { referral_code } = req.body;
+
+      // Validate referral_code presence
+      if (!referral_code) {
+        return res.status(400).json({
+          success: false,
+          message: "Referral code is required.",
+        });
+      }
+
+      const userRepository = appDataSource.getRepository(User);
+
+      // Find user by referral_code
+      const referringUser = await userRepository.findOne({
+        where: { referral_code },
+      });
+
+      if (!referringUser) {
+        return res.status(404).json({
+          success: false,
+          message: "Invalid referral code.",
+        });
+      }
+
+      // Increment the referring user's score by 1
+      referringUser.score += 1;
+
+      // Save the updated user
+      await userRepository.save(referringUser);
+
+      return res.status(200).json({
+        success: true,
+        message: "Referred successfully!.",
+        data: {
+          referringUser: {
+            id: referringUser.id,
+            username: referringUser.username,
+            score: referringUser.score,
+          },
+        },
+      });
+    } catch (error: any) {
+      console.error("Error updating referral:", error.message);
+      return res.status(500).json({
+        success: false,
+        message: "An error occurred while updating the referral.",
+      });
+    }
+  }
+
   async getReferralById(req: Request, res: Response) {
     try {
       const { id } = req.params;

@@ -31,6 +31,18 @@ router.post(
   ],
   referralController.updateReferral
 );
+
+router.post(
+  "/join-referral",
+  parsing,
+  [
+    body("referral_code")
+      .notEmpty()
+      .withMessage("The referral_code field is required"),
+  ],
+  referralController.joinReferral
+);
+
 router.get("/referral/:id", referralController.getReferralById);
 
 router.get(

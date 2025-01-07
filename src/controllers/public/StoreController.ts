@@ -4,6 +4,7 @@ import { Product } from "../../entities/Product";
 import { paginate } from "nestjs-typeorm-paginate";
 import { Review } from "../../entities/Review";
 import { User } from "../../entities/Users";
+import { StoreProfile } from "../../entities/StoreProfile";
 
 const BASE_URL = process.env.IMAGE_PATH || "https://api.grazle.co.in/";
 
@@ -49,6 +50,9 @@ export class StoreController {
 
       // Fetch products created by the user with pagination
       const productRepository = appDataSource.getRepository(Product);
+
+      const storeProfileRepository = appDataSource.getRepository(StoreProfile);
+
       let queryBuilder = productRepository
         .createQueryBuilder("product")
         .where("product.user_id = :userId", { userId: userIdNumber })
@@ -160,6 +164,15 @@ export class StoreController {
           const averageRating =
             productReviews.length > 0 ? totalRating / productReviews.length : 0;
 
+          // Fetch store profile to get the trusted field
+          const storeProfile = await storeProfileRepository.findOne({
+            where: { user: { id: product.user_id } },
+          });
+
+          const storeTrusted = storeProfile?.trusted
+            ? storeProfile?.trusted
+            : false;
+
           // Attach BASE_URL to the featured_image
           const updatedProduct = {
             ...product,
@@ -168,6 +181,7 @@ export class StoreController {
               : null,
             rating: averageRating.toFixed(1), // Format average rating to one decimal place
             reviews: productReviews.length,
+            store_trusted: userProfile?.store_profile.trusted,
           };
 
           return updatedProduct;
@@ -199,7 +213,7 @@ export class StoreController {
           store_products: pagination.items.length,
           store_rating: storeRating,
           store_reviews: totalStoreReviews,
-          storeTrusted : userProfile?.store_profile.trusted
+          storeTrusted: userProfile?.store_profile.trusted,
         },
         products: productsWithReviews,
         meta: {
