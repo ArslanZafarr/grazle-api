@@ -134,14 +134,7 @@ export class UserMembershipController {
       const newMembership = new UserMembership();
       newMembership.user = user;
       newMembership.membership_plan = membershipPlan;
-      newMembership.payment_status = "paid";
-
-      // making default true by adding this code for testing purpose
-
-      newMembership.is_active = true;
-      newMembership.start_date = startDate;
-      newMembership.end_date = endDate;
-      newMembership.status = "active";
+      newMembership.payment_status = "notpaid";
 
       const createdMembership = await userMembershipRepo.save(newMembership);
       res.status(201).json({
@@ -287,6 +280,85 @@ export class UserMembershipController {
     }
   }
 
+  async updateMembershipTransactionId(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      // Validation Error Handling
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        const result = errors.mapped();
+
+        const formattedErrors: Record<string, string[]> = {};
+        for (const key in result) {
+          formattedErrors[key.charAt(0).toLowerCase() + key.slice(1)] = [
+            result[key].msg,
+          ];
+        }
+
+        const errorCount = Object.keys(result).length;
+        const errorSuffix =
+          errorCount > 1
+            ? ` (and ${errorCount - 1} more error${errorCount > 2 ? "s" : ""})`
+            : "";
+
+        const errorResponse = {
+          success: false,
+          message: `${result[Object.keys(result)[0]].msg}${errorSuffix}`,
+          errors: formattedErrors,
+        };
+
+        return res.status(400).json(errorResponse);
+      }
+
+      const { transaction_id } = req.body;
+
+      const userMembershipRepo = appDataSource.getRepository(UserMembership);
+
+      // Find membership by id and load the membership_plan relation
+      const membership = await userMembershipRepo.findOne({
+        where: { id: parseInt(id, 10) },
+        relations: ["membership_plan"], // Load the membership_plan relation
+      });
+
+      if (!membership) {
+        return res.status(404).json({
+          success: false,
+          message: "Membership not found",
+        });
+      }
+
+      const membershipPlan = membership.membership_plan;
+      if (!membershipPlan) {
+        return res.status(404).json({
+          success: false,
+          message: "Membership plan not found",
+        });
+      }
+
+      // Calculate start and end date
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + membershipPlan.duration_months);
+
+      // Update transaction
+      membership.transaction_id = transaction_id;
+
+      await userMembershipRepo.save(membership);
+
+      res.status(200).json({
+        success: true,
+        message: "Membership transaction id updated successfully!",
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to update payment",
+        error: error.message,
+      });
+    }
+  }
+
   async getUserMemberships(req: Request, res: Response) {
     try {
       const getUser = (req as any).user;
@@ -330,7 +402,7 @@ export class UserMembershipController {
       // Find active membership by user ID
       const activeMembership = await userMembershipRepo.findOne({
         where: { user: { id: parseInt(userId, 10) }, is_active: true },
-        relations: ["membership_plan" , "user"],
+        relations: ["membership_plan", "user"],
       });
 
       if (!activeMembership) {

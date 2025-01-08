@@ -1170,7 +1170,7 @@ export class ProductListingController {
           total_poor_count: totalPoorCount,
         },
         store: {
-          store_id: store.id,
+          store_id: user?.id,
           store_name: user?.store_profile
             ? user?.store_profile?.store_name
             : null,

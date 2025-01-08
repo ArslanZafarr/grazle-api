@@ -61,17 +61,8 @@ export class StoreController {
         .orderBy("product.created_at", "DESC")
         .groupBy("product.id");
 
-      // Sorting based on latest_arrival parameter
-      if (latest_arrival) {
-        queryBuilder = queryBuilder.addOrderBy(
-          "product.created_at",
-          latest_arrival === "desc" ? "DESC" : "ASC"
-        );
-      }
-
-      // Apply keywords filter only if provided
       if (keywords) {
-        queryBuilder = queryBuilder.where(
+        queryBuilder = queryBuilder.andWhere(
           "(product.title LIKE :keywords OR product.description LIKE :keywords OR product.tags LIKE :keywords)",
           { keywords: `%${keywords}%` }
         );
@@ -80,10 +71,7 @@ export class StoreController {
       if (!isNaN(minPrice) && !isNaN(maxPrice)) {
         queryBuilder = queryBuilder.andWhere(
           "product.price BETWEEN :minPrice AND :maxPrice",
-          {
-            minPrice,
-            maxPrice,
-          }
+          { minPrice, maxPrice }
         );
       } else if (!isNaN(minPrice)) {
         queryBuilder = queryBuilder.andWhere("product.price >= :minPrice", {
@@ -95,7 +83,6 @@ export class StoreController {
         });
       }
 
-      // Sorting based on price parameter
       if (price) {
         queryBuilder = queryBuilder.addOrderBy(
           "product.price",
@@ -103,36 +90,32 @@ export class StoreController {
         );
       }
 
-      // Apply discount filter
       if (discount === "discount") {
-        queryBuilder = queryBuilder.andWhere(
-          "product.discount IS NOT NULL AND product.discount > 0"
-        );
-        queryBuilder = queryBuilder.addOrderBy("product.discount", "DESC");
+        queryBuilder = queryBuilder
+          .andWhere("product.discount IS NOT NULL AND product.discount > 0")
+          .addOrderBy("product.discount", "DESC");
       }
 
-      // Filtering based on top_rated parameter
       if (top_rated === "top") {
-        queryBuilder = queryBuilder
-          .leftJoin("product.reviews", "review")
-          .groupBy("product.id")
-          .having("AVG(review.rating) = 5");
+        queryBuilder = queryBuilder.having("AVG(review.rating) = 5");
       }
 
-      // Sorting based on popular parameter (number of reviews)
       if (popular === "popular") {
-        queryBuilder = queryBuilder
-          .leftJoin("product.reviews", "review")
-          .groupBy("product.id")
-          .addOrderBy("COUNT(review.id)", "DESC");
+        queryBuilder = queryBuilder.addOrderBy("COUNT(review.id)", "DESC");
       }
 
-      // Apply more_suitable=suitable filter
       if (more_suitable === "suitable") {
-        // Apply combination of discount and popular
         queryBuilder = queryBuilder
-          .andWhere("product.discount IS NOT NULL AND product.discount > 0") // Assuming discount is a column in the product entity
-          .addOrderBy("reviewCount", "DESC"); // Sort by popularity
+          .andWhere("product.discount IS NOT NULL AND product.discount > 0")
+          .addOrderBy("reviewCount", "DESC");
+      }
+
+      // Sorting based on latest_arrival parameter
+      if (latest_arrival) {
+        queryBuilder = queryBuilder.addOrderBy(
+          "product.created_at",
+          latest_arrival === "desc" ? "DESC" : "ASC"
+        );
       }
 
       const pagination = await paginate<Product>(queryBuilder, {
@@ -149,42 +132,32 @@ export class StoreController {
 
       // Fetch all reviews for each product in pagination
       const reviewRepository = appDataSource.getRepository(Review);
+
       const productsWithReviews = await Promise.all(
         pagination.items.map(async (product) => {
-          // Fetch all reviews for the current product
           const productReviews = await reviewRepository.find({
             where: { product_id: product.id },
           });
 
-          // Calculate average rating for the product
           let totalRating = 0;
-          productReviews.forEach((review) => {
-            totalRating += review.rating;
-          });
+          productReviews.forEach((review) => (totalRating += review.rating));
           const averageRating =
             productReviews.length > 0 ? totalRating / productReviews.length : 0;
 
-          // Fetch store profile to get the trusted field
           const storeProfile = await storeProfileRepository.findOne({
             where: { user: { id: product.user_id } },
           });
+          const storeTrusted = storeProfile?.trusted || false;
 
-          const storeTrusted = storeProfile?.trusted
-            ? storeProfile?.trusted
-            : false;
-
-          // Attach BASE_URL to the featured_image
-          const updatedProduct = {
+          return {
             ...product,
             featured_image: product.featured_image
               ? `${BASE_URL}${product.featured_image}`
               : null,
-            rating: averageRating.toFixed(1), // Format average rating to one decimal place
+            rating: averageRating.toFixed(1),
             reviews: productReviews.length,
             store_trusted: userProfile?.store_profile.trusted,
           };
-
-          return updatedProduct;
         })
       );
 
@@ -201,6 +174,11 @@ export class StoreController {
           ? (totalStoreRating / productsWithReviews.length).toFixed(1)
           : "0.0";
 
+      // Calculate total number of products by the user
+      const totalProductsCount = await productRepository.count({
+        where: { user_id: userIdNumber },
+      });
+
       res.status(200).json({
         success: true,
         message: "Products retrieved successfully",
@@ -210,7 +188,7 @@ export class StoreController {
           image: userProfile?.store_profile
             ? `${BASE_URL}${userProfile?.store_profile?.store_image}`
             : null,
-          store_products: pagination.items.length,
+          store_products: totalProductsCount,
           store_rating: storeRating,
           store_reviews: totalStoreReviews,
           storeTrusted: userProfile?.store_profile.trusted,

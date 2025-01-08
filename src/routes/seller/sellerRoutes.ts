@@ -388,6 +388,18 @@ router.post(
   userMembershipPlanController.confirmPayment
 );
 
+router.put(
+  "/membership-transaction/:id/update",
+  authMiddleware,
+  parsing,
+  [
+    body("transaction_id")
+      .notEmpty()
+      .withMessage("The transaction_id field is required"),
+  ],
+  userMembershipPlanController.updateMembershipTransactionId
+);
+
 router.get(
   "/user-membership-plan",
   authMiddleware,

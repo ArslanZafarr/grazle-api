@@ -173,7 +173,7 @@ export class OrderController {
 
         // Decrement stock quantity
         product.stock_quantity -= quantity;
-        
+
         await productRepository.save(product);
 
         const orderProduct = new OrderProduct();
@@ -1291,6 +1291,44 @@ export class OrderController {
         message: "Order updated successfully",
       });
     } catch (error) {
+      res.status(500).json({ error: "Failed to update order" });
+    }
+  }
+
+  async updateOrderTransactionId(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { transaction_id } = req.body;
+
+      const orderRepo = appDataSource.getRepository(Order);
+
+      // Fetch the order to update
+      let order = await orderRepo.findOne({
+        where: { id: parseInt(id, 10) },
+      });
+
+      if (!order) {
+        return res.status(404).json({
+          error: "Order not found",
+          success: false,
+          message: "Order not found with the provided ID",
+        });
+      }
+
+      // Update the payment status and timestamp
+      order.transaction_id = transaction_id;
+      order.updated_at = new Date();
+
+      // Save the updated order
+      const updatedOrder = await orderRepo.save(order);
+
+      res.status(200).json({
+        // order: updatedOrder,
+        success: true,
+        message: "Order transaction id updated successfully",
+      });
+    } catch (error) {
+      console.error("Error updating transaction id:", error);
       res.status(500).json({ error: "Failed to update order" });
     }
   }

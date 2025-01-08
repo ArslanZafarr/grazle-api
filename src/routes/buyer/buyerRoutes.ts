@@ -121,4 +121,16 @@ router.put(
   orderController.updatePaymentStatus
 );
 
+router.put(
+  "/buyer/order-transaction/:id/update",
+  authMiddleware,
+  parsing,
+  [
+    body("transaction_id")
+      .notEmpty()
+      .withMessage("The transaction_id field is required"),
+  ],
+  orderController.updateOrderTransactionId
+);
+
 export default router;
