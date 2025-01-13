@@ -56,6 +56,7 @@ export class StoreController {
       let queryBuilder = productRepository
         .createQueryBuilder("product")
         .where("product.user_id = :userId", { userId: userIdNumber })
+        .andWhere("product.active = :active", { active: true })
         .leftJoin("product.reviews", "review")
         .addSelect("COUNT(review.id)", "reviewCount")
         .orderBy("product.created_at", "DESC")

@@ -53,6 +53,7 @@ export class SearchController {
         .select("product.id")
         .leftJoin("product.reviews", "review")
         .addSelect("COUNT(review.id)", "reviewCount")
+        .where("product.active = :active", { active: true }) 
         .groupBy("product.id");
 
       // Apply keywords filter only if provided

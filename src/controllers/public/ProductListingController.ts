@@ -180,7 +180,8 @@ export class ProductListingController {
       const distinctProductIds = productRepository
         .createQueryBuilder("product")
         .select(["product.id", "product.created_at"])
-        .orderBy("product.created_at", "DESC");
+        .orderBy("product.created_at", "DESC")
+        .where("product.active = :active", { active: true });
 
       if (categoryId) {
         distinctProductIds.andWhere("product.category_id = :categoryId", {
@@ -289,6 +290,7 @@ export class ProductListingController {
         .leftJoinAndSelect("product.gallery", "gallery")
         .where("product.category_id = :category_id", { category_id })
         .andWhere("product.id != :product_id", { product_id })
+        .andWhere("product.active = :active", { active: true })
         .orderBy("product.created_at", "DESC")
         .limit(10);
 
@@ -360,7 +362,8 @@ export class ProductListingController {
         .createQueryBuilder("product")
         .leftJoinAndSelect("product.gallery", "gallery")
         .leftJoinAndSelect("product.offer", "offer")
-        .orderBy("product.created_at", "DESC");
+        .orderBy("product.created_at", "DESC")
+        .where("product.active = :active", { active: true });
 
       if (category_id) {
         queryBuilder.andWhere("product.category_id = :category_id", {

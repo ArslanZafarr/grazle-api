@@ -16,6 +16,7 @@ async function getRandomProducts(limit: number): Promise<Product[]> {
     .createQueryBuilder("product")
     .leftJoinAndSelect("product.gallery", "gallery")
     .leftJoinAndSelect("product.offer", "offer")
+    .where("product.active = :active", { active: true }) 
     .orderBy("RAND()")
     .limit(limit)
     .getMany();
