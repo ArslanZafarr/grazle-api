@@ -70,8 +70,8 @@ export class Product {
   @Column({ type: "int", nullable: true })
   low_stock_threshold: number;
 
-  @Column({ default: 1 })
-  active: number;
+  @Column({ default: false })
+  active: boolean;
 
   @Column({ type: "boolean", default: false })
   is_sponsored: boolean;

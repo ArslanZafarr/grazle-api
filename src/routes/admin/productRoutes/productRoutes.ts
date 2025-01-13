@@ -85,6 +85,11 @@ router.put(
   productController.makeProductFestival
 );
 
+router.put(
+  "/admin/toggle-product/:id",
+  productController.toggleProductActiveStatus
+);
+
 router.delete(
   "/admin/products/:id",
   adminMiddleware,

@@ -29,7 +29,7 @@ interface ProductWithoutTimestamps {
   price: number;
   description: string;
   tags: string;
-  active: number;
+  active: boolean;
   gallery: ProductsGalleryWithoutTimestamps[];
   category?: any;
   brand?: any;

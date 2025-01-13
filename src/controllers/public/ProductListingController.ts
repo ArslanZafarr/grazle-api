@@ -27,7 +27,7 @@ interface ProductWithoutTtimestamps {
   price: number;
   description: string | null;
   tags: string | null;
-  active: number;
+  active: boolean;
   gallery: ProductsGalleryWithoutTimestamps[];
 }
 

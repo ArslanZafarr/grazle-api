@@ -31,7 +31,7 @@ interface ProductWithoutTimestamps {
   price: number;
   description: string;
   tags: string;
-  active: number;
+  active: boolean;
   gallery: ProductsGalleryWithoutTimestamps[];
   category?: any;
   brand?: any;
@@ -880,6 +880,46 @@ export class ProductController {
       res.status(500).json({
         success: false,
         message: "Failed to update product",
+        error: error.message,
+      });
+    }
+  }
+
+  // Toggle Active Status for Product
+  async toggleProductActiveStatus(req: Request, res: Response) {
+    try {
+      const { id } = req.params; // Extract product ID from URL
+      const productRepository = appDataSource.getRepository(Product);
+
+      // Fetch the product by ID
+      const product = await productRepository.findOne({
+        where: { id: parseInt(id) },
+      });
+
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: "Product not found",
+        });
+      }
+
+      // Toggle the active status
+      product.active = !product.active;
+
+      // Save the updated product
+      await productRepository.save(product);
+
+      res.status(200).json({
+        success: true,
+        message: `Product ${
+          product.active ? "approved" : "disapproved"
+        } successfully!`,
+        product,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to toggle product active status",
         error: error.message,
       });
     }
